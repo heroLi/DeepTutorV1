@@ -40,9 +40,10 @@ jobs:
           node tests/test_curriculum_ui.js
           node tests/test_learning_ui.js
           node tests/test_learning_records_ui.js
+          node tests/test_language_ui.js
           python -c "from pathlib import Path; Path('/tmp/tutor-ui.js').write_text(Path('index.html').read_text().split('<script>')[1].split('</script>')[0])"
           node --check /tmp/tutor-ui.js
           python -c "from pathlib import Path; Path('/tmp/learning-ui.js').write_text(Path('learn.html').read_text().split('<script>')[1].split('</script>')[0])"
           node --check /tmp/learning-ui.js
       - name: Python syntax
-        run: python -m compileall -q app.py core.py curriculum.py tutor_provider.py learning_flow.py learning_records.py render.py tests
+        run: python -m compileall -q app.py core.py curriculum.py tutor_provider.py learning_flow.py learning_records.py language_practice.py render.py tests

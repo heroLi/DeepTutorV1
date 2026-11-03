@@ -15,6 +15,7 @@ from typing import Literal
 from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
+import language_practice
 from core import demo_plan
 from tutor_provider import TutorRequest, generate_hint
 
@@ -40,6 +41,11 @@ class AttemptRequest(ActionRequest):
 
 def initialize(connection):
     connection.executescript('''
+        CREATE TABLE IF NOT EXISTS language_reserved_items (
+            learner TEXT NOT NULL, item_id TEXT NOT NULL, PRIMARY KEY(learner, item_id));
+        CREATE TABLE IF NOT EXISTS language_session_requests (
+            learner TEXT NOT NULL, request_id TEXT NOT NULL, subject TEXT NOT NULL,
+            session_id TEXT NOT NULL, PRIMARY KEY(learner, request_id));
         CREATE TABLE IF NOT EXISTS practice_sessions (
             id TEXT PRIMARY KEY, lesson_id TEXT NOT NULL, learner TEXT NOT NULL,
             state TEXT NOT NULL, UNIQUE(lesson_id, learner));
@@ -97,6 +103,8 @@ def _exposed_elsewhere(connection, state, pair):
                               (state['learner'], state['id'])).fetchall()
     for row in rows:
         old = json.loads(row['state'])
+        if language_practice.is_language(old):
+            continue
         if pair == tuple(old['numbers']['initial']):
             return True
         if old['stage'] == 'transfer' and pair == tuple(old['numbers']['transfer']):
@@ -115,14 +123,25 @@ def _evidence(kind):
 
 
 def public_session(state):
-    total, groups = state['numbers'][state['stage']]
+    language = language_practice.is_language(state)
+    if language:
+        question = language_practice.item(state)['question']
+    else:
+        total, groups = state['numbers'][state['stage']]
+        question = f'{total}颗糖，平均分给{groups}个小朋友，每人分到几颗？只填数字。'
     current = state['evidence'][-1]
-    return dict(id=state['id'], learner=state['learner'], lesson_id=state['lesson_id'],
+    result = dict(id=state['id'], learner=state['learner'], lesson_id=state['lesson_id'],
                 revision=state['revision'], stage=state['stage'], status=state['status'],
-                question=f'{total}颗糖，平均分给{groups}个小朋友，每人分到几颗？只填数字。',
+                question=question,
                 hint_level=current['hints_used'], hint_text=state['hint_text'],
                 feedback=state['feedback'], attempt_count=current['attempt_count'],
                 evidence=state['evidence'], curriculum_label='按能力练习 · 本题教材对应关系待核对 · 单次证据不代表掌握')
+
+    if language:
+        result.update(subject=state['subject'], subject_label='语文' if state['subject'] == 'chinese' else '英语',
+            answer_instruction='只填一个汉字' if state['subject'] == 'chinese' else '只填 a 或 an',
+            curriculum_label='通用原创离线示例 · 非特定教材课程 · 单次证据不代表掌握')
+    return result
 
 
 def _load(connection, session_id, learner):
@@ -157,7 +176,8 @@ def create_session(db, lesson_id, request):
                               (request.learner,)).fetchall()
             for previous in prior:
                 old = json.loads(previous['state'])
-                excluded.update(tuple(pair) for pair in old['numbers'].values())
+                if not language_practice.is_language(old):
+                    excluded.update(tuple(pair) for pair in old['numbers'].values())
             excluded.update(_legacy_solved_pairs(c, request.learner))
             fresh = _fresh_numbers(total, groups, excluded)
             timestamp = utc_now()
@@ -191,7 +211,11 @@ def act(db, session_id, request, kind):
         if request.expected_revision != state['revision']:
             raise HTTPException(409, '练习已更新，请刷新后继续')
         current = state['evidence'][-1]
-        total, groups = state['numbers'][state['stage']]
+        language = language_practice.is_language(state)
+        if language:
+            content = language_practice.item(state)
+        else:
+            total, groups = state['numbers'][state['stage']]
         if kind == 'next':
             if state['stage'] != 'initial' or state['status'] != 'solved':
                 raise HTTPException(409, '先完成当前题目，再试一道新题')
@@ -205,15 +229,20 @@ def act(db, session_id, request, kind):
             if current['hints_used'] >= 3:
                 raise HTTPException(409, '已显示全部三层提示，可以再试一次')
             level = current['hints_used'] + 1
-            hint = generate_hint(TutorRequest(total=total, groups=groups, hint_level=level))
-            if hint.status != 'ready':
-                raise HTTPException(503, '提示暂时不可用，请稍后重试')
+            if language:
+                hint_text = content['hints'][level - 1]
+            else:
+                hint = generate_hint(TutorRequest(total=total, groups=groups, hint_level=level))
+                if hint.status != 'ready':
+                    raise HTTPException(503, '提示暂时不可用，请稍后重试')
+                hint_text = hint.hint_text
             current['hints_used'] = level
-            state['hint_text'] = hint.hint_text
-            state['feedback'] = '可以按提示画一画，再试一次。'
+            state['hint_text'] = hint_text
+            state['feedback'] = '可以按提示想一想，再试一次。' if language else '可以按提示画一画，再试一次。'
         elif kind == 'attempt':
             value = ''.join(unicodedata.normalize('NFKC', request.answer).split()).rstrip('。.')
-            correct = value == str(total // groups)
+            correct = (value.casefold() in [a.casefold() for a in [content['answer'], *content.get('alternatives', [])]]
+                       if language else value == str(total // groups))
             attempt_timestamp = utc_now()
             if current['attempt_count'] == 0:
                 current['first_attempt_correct'] = correct
@@ -224,7 +253,7 @@ def act(db, session_id, request, kind):
             current['attempt_count'] += 1
             current['independent_evidence'] = bool(state['stage'] == 'transfer'
                 and current['first_attempt_correct'] and current['hints_used'] == 0
-                and not _exposed_elsewhere(c, state, (total, groups)))
+                and not (language_practice.exposed_elsewhere(c, state) if language else _exposed_elsewhere(c, state, (total, groups))))
             c.execute('INSERT INTO practice_attempts(session_id,kind,answer,correct,hints_used) VALUES(?,?,?,?,?)',
                       (session_id, state['stage'], request.answer, int(correct), current['hints_used']))
             if correct:
@@ -233,8 +262,9 @@ def act(db, session_id, request, kind):
                     '这次新题独立答对了！这是一条练习证据，不代表已经掌握。' if current['independent_evidence'] else
                     '答对了！已保留首次作答和提示记录，可以以后继续练习。')
             else:
-                state['feedback'] = ('没关系，可以打开提示，跟着画一画，再试一次。' if value == '还不会' else
-                                     '还不对。想一想每组要一样多，可以再试一次，或打开提示。')
+                state['feedback'] = ('没关系，可以打开提示，想一想再试一次。' if language else
+                    ('没关系，可以打开提示，跟着画一画，再试一次。' if value == '还不会' else
+                                     '还不对。想一想每组要一样多，可以再试一次，或打开提示。'))
         else:
             raise ValueError('Unknown practice action')
         state['updated_at'] = utc_now()

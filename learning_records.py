@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException
 
 from learning_flow import public_session
+import language_practice
 
 
 class InvalidRecord(ValueError):
@@ -45,12 +46,15 @@ def _record(row, learner):
         raise InvalidRecord()
     if (status == 'completed' and stage != 'transfer') or (status == 'solved' and stage != 'initial'):
         raise InvalidRecord()
-    numbers = state['numbers'][stage]
-    if (not isinstance(numbers, (list, tuple)) or len(numbers) != 2
-            or any(type(n) is not int for n in numbers)
-            or not (2 <= numbers[0] <= 48 and 2 <= numbers[1] <= 8)
-            or numbers[0] % numbers[1]):
-        raise InvalidRecord()
+    if language_practice.is_language(state):
+        language_practice.item(state)
+    else:
+        numbers = state['numbers'][stage]
+        if (not isinstance(numbers, (list, tuple)) or len(numbers) != 2
+                or any(type(n) is not int for n in numbers)
+                or not (2 <= numbers[0] <= 48 and 2 <= numbers[1] <= 8)
+                or numbers[0] % numbers[1]):
+            raise InvalidRecord()
     raw_evidence = state['evidence']
     expected_kinds = ['initial'] if stage == 'initial' else ['initial', 'transfer']
     if not isinstance(raw_evidence, list) or len(raw_evidence) != len(expected_kinds):
@@ -76,11 +80,14 @@ def _record(row, learner):
     # Preserve optional historic dates while requiring the original evidence fields.
     # Never expose its hints/feedback or serialize the private state itself.
     projection = public_session({**state, 'evidence': evidence})
-    return dict(session_id=state['id'], lesson_id=state['lesson_id'], status=status, stage=stage,
+    result = dict(session_id=state['id'], lesson_id=state['lesson_id'], status=status, stage=stage,
         question=projection['question'], evidence=evidence,
         created_at=_timestamp(state.get('created_at')), updated_at=_timestamp(state.get('updated_at')),
         continue_url=f"/learn?session={state['id']}&learner={learner}",
         curriculum_label=projection['curriculum_label'])
+    if language_practice.is_language(state):
+        result.update(subject=state['subject'], subject_label=projection['subject_label'])
+    return result
 
 
 def read_records(db, learner):

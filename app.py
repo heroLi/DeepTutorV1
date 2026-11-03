@@ -25,6 +25,7 @@ from tutor_provider import TutorRequest, TutorResponse, generate_hint
 from render import render_lesson
 import learning_flow
 import learning_records
+import language_practice
 
 load_env()
 DATA = Path(os.environ.get('TUTOR_DATA_DIR', str(ROOT/'data'))).resolve()
@@ -174,6 +175,11 @@ def offline_hint(request: TutorRequest):
     return generate_hint(request)
 
 
+@app.post('/api/language-practice-sessions')
+def language_practice_create(request: language_practice.LanguageSessionRequest):
+    return language_practice.create_session(db, request)
+
+
 @app.post('/api/lessons/{lesson_id}/practice-session')
 def practice_create(lesson_id: str, request: learning_flow.SessionRequest):
     return learning_flow.create_session(db, lesson_id, request)
@@ -231,7 +237,7 @@ def create(request: NewLesson):
 @app.get('/api/lessons')
 def lesson_list(learner: Learner):
     with db() as c:
-        rows = c.execute('SELECT id,state,plan,created FROM lessons WHERE learner=? ORDER BY created DESC', (learner,)).fetchall()
+        rows = c.execute("SELECT id,state,plan,created FROM lessons WHERE learner=? AND source!='offline_language' ORDER BY created DESC", (learner,)).fetchall()
     return [{'id':r['id'],'state':r['state'],'title':json.loads(r['plan'])['title'],'created':r['created']} for r in rows]
 
 
@@ -330,6 +336,8 @@ def answer(lesson_id: str, request: Answer):
     item = get_lesson(lesson_id,request.learner)
     if item['state'] not in ('ready', 'offline_ready'):
         raise HTTPException(409,'请先由家长确认讲解稿，开始离线学习或完成讲解视频')
+    if item['source'] == 'offline_language':
+        raise HTTPException(422, '请在孩子练习页作答')
     quiz = item['plan']['quiz']
     correct = normalize(request.answer) == normalize(quiz['answer'])
     with db() as c:
