@@ -18,6 +18,8 @@ class Textbook(BaseModel):
     verified_on: date | None = None
     current_unit: str = Field(default='', max_length=120)
     progress_confirmed: bool = False
+    catalog_id: str = Field(default='', max_length=80)
+    unit_id: str = Field(default='', max_length=80)
 
     @model_validator(mode='after')
     def check_evidence(self):
@@ -59,7 +61,9 @@ class CurriculumConfig(BaseModel):
             aligned = bool(self.grade and self.semester and self.academic_year and book and book.status == 'verified' and book.material_type == 'student_textbook'
                            and book.progress_confirmed and book.current_unit)
             result[subject] = {
-                'textbook_aligned': aligned,
+                'textbook_aligned': aligned,  # Legacy parent-metadata flag, not course alignment.
+                'parent_metadata_confirmed': aligned,
+                'content_aligned': False,
                 'label': f'家长已核对教材进度：{book.current_unit}' if aligned else '按能力练习 · 教材进度待核对',
                 'note': '此配置不代表系统已具备该教材的课程内容或单元题库。',
             }

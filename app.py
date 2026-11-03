@@ -26,6 +26,7 @@ from render import render_lesson
 import learning_flow
 import learning_records
 import language_practice
+import curriculum_alignment
 
 load_env()
 DATA = Path(os.environ.get('TUTOR_DATA_DIR', str(ROOT/'data'))).resolve()
@@ -136,8 +137,17 @@ def curriculum_get(learner: Learner):
     with db() as c:
         row = c.execute('SELECT * FROM curriculum_configs WHERE learner=?', (learner,)).fetchone()
     config = CurriculumConfig.model_validate_json(row['config']) if row else CurriculumConfig()
+    revision = row['revision'] if row else 0
+    aligned_subjects = curriculum_alignment.alignment(config)
+    subjects = config.subject_status()
+    for subject, state in aligned_subjects.items():
+        subjects[subject]['content_aligned'] = state['content_aligned']
     return {'learner': learner, 'config': config.model_dump(mode='json'),
-            'revision': row['revision'] if row else 0, 'subjects': config.subject_status()}
+            'revision': revision, 'subjects': subjects,
+            'alignment': {'learner': learner, 'revision': revision,
+                'subjects': aligned_subjects,
+                'note': '家长元数据确认与系统内容映射分开核验；通用练习不会自动变为同步课程。'},
+            'catalog': curriculum_alignment.public_catalog()}
 
 
 @app.put('/api/curriculum')
@@ -164,9 +174,26 @@ def curriculum_save(learner: Learner, request: CurriculumUpdate):
                     book.verified_on = None
                     book.progress_confirmed = False
                     book.current_unit = ''
+                    book.catalog_id = ''
+                    book.unit_id = ''
+        try:
+            curriculum_alignment.validate_selection(request.config)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from None
         c.execute('INSERT INTO curriculum_configs VALUES(?,?,?,?) ON CONFLICT(learner) DO UPDATE SET config=excluded.config,revision=excluded.revision,updated=excluded.updated',
                   (learner, request.config.model_dump_json(), revision+1, now()))
     return curriculum_get(learner)
+
+
+@app.get('/api/curriculum/catalog')
+def curriculum_catalog():
+    return JSONResponse(curriculum_alignment.public_catalog(), headers={'Cache-Control': 'no-store'})
+
+
+@app.get('/api/curriculum/alignment')
+def curriculum_alignment_get(learner: Learner):
+    value = curriculum_get(learner)
+    return JSONResponse(value['alignment'], headers={'Cache-Control': 'no-store'})
 
 
 @app.post('/api/tutor/hint', response_model=TutorResponse)

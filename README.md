@@ -55,6 +55,10 @@ node tests/test_offline_ui.js
 
 内容边界、使用方式与验收限制见 `docs/LANGUAGE_PRACTICE.md`。
 
+## 上海教材同步准备
+
+三科现增加可核验的版本、学期、单元及原创练习对应框架，并展示缺少的核对条件。孩子实际用书尚未确认、生产目录暂无已核验条目，现有通用练习不会自动变成教材同步课程。官方目录参考与下一步需要的最小教材资料见 `docs/CURRICULUM_ALIGNMENT.md`。
+
 ## 先看成品
 
 - `examples/rendered/lesson.mp4`：12颗糖平均分给3人的配音动画，约38秒。
