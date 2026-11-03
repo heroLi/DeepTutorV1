@@ -1,0 +1,15 @@
+.venv/
+.deeptutor-venv/
+deeptutor-data/
+deeptutor-install.log
+doctor-*.json
+doctor-*.log
+deeptutor-setup.json
+setup_model_switch.py
+examples/rendered/[0-9][0-9].mp3
+examples/rendered/[0-9][0-9].mp4
+.env
+data/
+__pycache__/
+.pytest_cache/
+*.pyc

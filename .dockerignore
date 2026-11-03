@@ -1,0 +1,10 @@
+.venv
+.deeptutor-venv
+deeptutor-data
+deeptutor-install.log
+doctor-result.json
+.env
+data
+__pycache__
+.pytest_cache
+examples/rendered
