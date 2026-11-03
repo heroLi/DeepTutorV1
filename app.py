@@ -24,6 +24,7 @@ from curriculum import CurriculumConfig
 from tutor_provider import TutorRequest, TutorResponse, generate_hint
 from render import render_lesson
 import learning_flow
+import learning_records
 
 load_env()
 DATA = Path(os.environ.get('TUTOR_DATA_DIR', str(ROOT/'data'))).resolve()
@@ -196,6 +197,19 @@ def practice_hint(session_id: str, request: learning_flow.ActionRequest):
 @app.post('/api/practice-sessions/{session_id}/next')
 def practice_next(session_id: str, request: learning_flow.ActionRequest):
     return learning_flow.act(db, session_id, request, 'next')
+
+
+@app.get('/api/practice-records')
+def practice_records(learner: Learner):
+    return JSONResponse(learning_records.read_records(db, learner), headers={'Cache-Control': 'no-store'})
+
+
+@app.get('/api/practice-records/export')
+def practice_records_export(learner: Learner):
+    return JSONResponse(learning_records.read_records(db, learner), headers={
+        'Content-Disposition': f'attachment; filename="practice-records-{learner}.json"',
+        'Cache-Control': 'no-store',
+    })
 
 
 @app.post('/api/lessons')

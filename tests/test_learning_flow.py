@@ -117,7 +117,9 @@ def test_wrong_retry_and_progressive_hints_preserved(client):
     s = action(client,s,'attempt',correct(s)).json()
     assert s['status'] == 'solved'
     assert s['evidence'][0] == dict(kind='initial',first_attempt_correct=False,hints_used=3,
-                                  attempt_count=2,independent_evidence=False)
+                                  attempt_count=2,independent_evidence=False,
+                                  first_attempt_at=s['evidence'][0]['first_attempt_at'],
+                                  last_attempt_at=s['evidence'][0]['last_attempt_at'])
     initial = s['evidence'][0]
     s = action(client,s,'next').json()
     assert s['evidence'][0] == initial
@@ -281,3 +283,40 @@ def test_transfer_exposed_by_later_initial_is_not_independent(client):
     assert finished['status'] == 'completed'
     assert finished['evidence'][-1]['first_attempt_correct'] is True
     assert finished['evidence'][-1]['independent_evidence'] is False
+
+
+def test_timestamps_record_real_actions_and_replay_is_unchanged(client, monkeypatch):
+    monkeypatch.setattr(learning_flow, 'utc_now', lambda:'2026-11-03T08:00:00+00:00')
+    s = session(client)
+    with service.db() as c:
+        before = json.loads(c.execute('SELECT state FROM practice_sessions WHERE id=?',(s['id'],)).fetchone()['state'])
+    assert before['created_at']==before['updated_at']=='2026-11-03T08:00:00+00:00'
+    assert s['evidence'][0]['first_attempt_at'] is None
+    monkeypatch.setattr(learning_flow, 'utc_now', lambda:'2026-11-03T08:01:00+00:00')
+    aid=str(uuid.uuid4());attempt=action(client,s,'attempt','0',action_id=aid).json()
+    assert attempt['evidence'][0]['first_attempt_at']=='2026-11-03T08:01:00+00:00'
+    assert attempt['evidence'][0]['last_attempt_at']=='2026-11-03T08:01:00+00:00'
+    monkeypatch.setattr(learning_flow, 'utc_now', lambda:'2026-11-03T08:02:00+00:00')
+    assert action(client,s,'attempt','0',action_id=aid).json()==attempt
+    with service.db() as c:
+        stored=json.loads(c.execute('SELECT state FROM practice_sessions WHERE id=?',(s['id'],)).fetchone()['state'])
+    assert stored['updated_at']=='2026-11-03T08:01:00+00:00'
+    retried=action(client,attempt,'attempt',correct(attempt)).json()
+    assert retried['evidence'][0]['first_attempt_at']=='2026-11-03T08:01:00+00:00'
+    assert retried['evidence'][0]['last_attempt_at']=='2026-11-03T08:02:00+00:00'
+
+
+def test_old_first_attempt_timestamp_not_invented_on_retry(client,monkeypatch):
+    s=session(client);s=action(client,s,'attempt','0').json()
+    with service.db() as c:
+        state=json.loads(c.execute('SELECT state FROM practice_sessions WHERE id=?',(s['id'],)).fetchone()['state'])
+        for field in ('created_at','updated_at'):state.pop(field,None)
+        for field in ('first_attempt_at','last_attempt_at'):state['evidence'][0].pop(field,None)
+        c.execute('UPDATE practice_sessions SET state=? WHERE id=?',(json.dumps(state),s['id']))
+    monkeypatch.setattr(learning_flow,'utc_now',lambda:'2026-11-03T08:03:00+00:00')
+    retried=action(client,s,'attempt',correct(s)).json()
+    assert retried['evidence'][0]['first_attempt_at'] is None
+    assert retried['evidence'][0]['last_attempt_at']=='2026-11-03T08:03:00+00:00'
+    with service.db() as c:
+        stored=json.loads(c.execute('SELECT state FROM practice_sessions WHERE id=?',(s['id'],)).fetchone()['state'])
+    assert 'created_at' not in stored

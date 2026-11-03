@@ -9,6 +9,7 @@ import json
 import re
 import unicodedata
 import uuid
+from datetime import datetime, timezone
 from typing import Literal
 
 from fastapi import HTTPException
@@ -103,9 +104,14 @@ def _exposed_elsewhere(connection, state, pair):
     return pair in _legacy_solved_pairs(connection, state['learner'])
 
 
+def utc_now():
+    return datetime.now(timezone.utc).isoformat()
+
+
 def _evidence(kind):
     return dict(kind=kind, first_attempt_correct=None, hints_used=0,
-                attempt_count=0, independent_evidence=False)
+                attempt_count=0, independent_evidence=False,
+                first_attempt_at=None, last_attempt_at=None)
 
 
 def public_session(state):
@@ -154,7 +160,9 @@ def create_session(db, lesson_id, request):
                 excluded.update(tuple(pair) for pair in old['numbers'].values())
             excluded.update(_legacy_solved_pairs(c, request.learner))
             fresh = _fresh_numbers(total, groups, excluded)
+            timestamp = utc_now()
             state = dict(id=uuid.uuid4().hex, learner=request.learner, lesson_id=lesson_id,
+                         created_at=timestamp, updated_at=timestamp,
                          revision=0, stage='initial', status='attempting', hint_text='', feedback='',
                          numbers={'initial': [total, groups], 'transfer': fresh},
                          evidence=[_evidence('initial')])
@@ -206,8 +214,13 @@ def act(db, session_id, request, kind):
         elif kind == 'attempt':
             value = ''.join(unicodedata.normalize('NFKC', request.answer).split()).rstrip('。.')
             correct = value == str(total // groups)
+            attempt_timestamp = utc_now()
             if current['attempt_count'] == 0:
                 current['first_attempt_correct'] = correct
+                current['first_attempt_at'] = attempt_timestamp
+            else:
+                current.setdefault('first_attempt_at', None)
+            current['last_attempt_at'] = attempt_timestamp
             current['attempt_count'] += 1
             current['independent_evidence'] = bool(state['stage'] == 'transfer'
                 and current['first_attempt_correct'] and current['hints_used'] == 0
@@ -224,6 +237,7 @@ def act(db, session_id, request, kind):
                                      '还不对。想一想每组要一样多，可以再试一次，或打开提示。')
         else:
             raise ValueError('Unknown practice action')
+        state['updated_at'] = utc_now()
         state['revision'] += 1
         result = public_session(state)
         c.execute('UPDATE practice_sessions SET state=? WHERE id=?', (json.dumps(state), session_id))
