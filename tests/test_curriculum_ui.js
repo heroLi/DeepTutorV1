@@ -12,12 +12,12 @@ assert.equal(get('#bookTitle').value,'');assert.equal(get('#bookStatus').value,'
 get('#grade').value='3';get('#semester').value='first';get('#academicYear').value='2026-2027';get('#bookTitle').value='Synthetic math';get('#bookPublisher').value='Synthetic publisher';get('#bookEdition').value='draft';get('#bookSource').value='local:test\n';
 ctx.record=[];vm.runInContext("api=async(url,opts)=>{record.push({url,body:JSON.parse(opts.body)});return {...sample,revision:3,config:JSON.parse(opts.body).config}}",ctx);
 (async()=>{
- await get('#saveCurriculum').onclick();
+ const saving=get('#saveCurriculum').onclick();assert(get('#subject').disabled&&get('#bookTitle').disabled&&get('#grade').disabled);await saving;
  assert.equal(ctx.record.length,1);assert.equal(ctx.record[0].body.expected_revision,2);
  assert.equal(ctx.record[0].body.config.textbooks.length,2);
  assert.equal(ctx.record[0].body.config.textbooks.find(b=>b.subject==='english').title,'Synthetic English');
  assert.equal(ctx.record[0].body.config.grade,3);
- assert(!get('#learner').disabled&&!get('#saveCurriculum').disabled);
+ assert(!get('#learner').disabled&&!get('#saveCurriculum').disabled&&!get('#subject').disabled);get('#bookProgress').checked=true;get('#bookUnit').oninput();assert(!get('#bookProgress').checked);
  assert(get('#curriculumMessage').textContent.includes('保存'));
  vm.runInContext("api=async()=>{throw Error('配置已经更新，请重新打开后再保存')}",ctx);
  await get('#saveCurriculum').onclick();assert(get('#curriculumMessage').textContent.includes('已经更新'));assert(!get('#saveCurriculum').disabled);

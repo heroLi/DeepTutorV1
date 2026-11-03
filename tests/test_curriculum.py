@@ -2,7 +2,7 @@ import os
 import tempfile
 from datetime import date
 
-os.environ.setdefault('TUTOR_DATA_DIR', tempfile.mkdtemp(prefix='curriculum-test-'))
+os.environ['TUTOR_DATA_DIR'] = tempfile.mkdtemp(prefix='curriculum-test-')
 import pytest
 from fastapi.testclient import TestClient
 import app as service
@@ -94,3 +94,28 @@ def test_hint_api_offline_only_no_provider_selection(client):
     assert client.post('/api/tutor/hint',json={'provider':'deepseek','total':12,'groups':3}).status_code==422
     assert client.post('/api/tutor/hint',json={'total':13,'groups':3}).json()['status']=='unsupported'
     assert client.post('/api/tutor/hint',json={}).json()['status']=='needs_clarification'
+
+
+@pytest.mark.parametrize('field,value',[('title','Replacement book'),('edition','New edition'),('publisher','Another publisher'),('source_refs',['synthetic:new-source'])])
+def test_changed_book_cannot_inherit_old_verification(client,field,value):
+    assert save(client,config()).status_code==200
+    c=config();c['textbooks'][0][field]=value
+    result=save(client,c,1).json();b=result['config']['textbooks'][0]
+    assert b['status']=='needs_update' and b['verified_on'] is None
+    assert not b['progress_confirmed'] and b['current_unit']==''
+    assert not result['subjects']['math']['textbook_aligned']
+    revised=result['config'];b=revised['textbooks'][0]
+    b.update(status='verified',verified_on=date.today().isoformat(),current_unit='New verified unit',progress_confirmed=True)
+    assert save(client,revised,2).json()['subjects']['math']['textbook_aligned']
+
+
+def test_clear_grade_invalidates_instead_of_rejecting(client):
+    assert save(client,config()).status_code==200
+    c=config();c['grade']=None
+    response=save(client,c,1);assert response.status_code==200
+    assert not response.json()['subjects']['math']['textbook_aligned']
+
+
+def test_verified_book_without_confirmed_term_not_aligned(client):
+    c=config();c['grade']=None;c['semester']=None
+    assert not save(client,c).json()['subjects']['math']['textbook_aligned']

@@ -143,8 +143,13 @@ def curriculum_save(learner: Learner, request: CurriculumUpdate):
             previous = CurriculumConfig.model_validate_json(row['config'])
             term_changed = any(getattr(previous, key) != getattr(request.config, key)
                                for key in ('grade', 'semester', 'academic_year'))
-            if term_changed:
-                for book in request.config.textbooks:
+            previous_books = {book.subject: book for book in previous.textbooks}
+            for book in request.config.textbooks:
+                old_book = previous_books.get(book.subject)
+                book_changed = old_book is not None and any(
+                    getattr(old_book, key) != getattr(book, key)
+                    for key in ('title', 'publisher', 'edition', 'isbn', 'material_type', 'source_refs'))
+                if term_changed or book_changed:
                     if book.status == 'verified':
                         book.status = 'needs_update'
                     book.verified_on = None

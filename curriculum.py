@@ -50,15 +50,13 @@ class CurriculumConfig(BaseModel):
                 raise ValueError('学年请按2026-2027的格式填写')
         if len({b.subject for b in self.textbooks}) != len(self.textbooks):
             raise ValueError('每科仅保留一份当前教材配置')
-        if any(b.status == 'verified' for b in self.textbooks) and not all((self.grade, self.semester, self.academic_year)):
-            raise ValueError('已核对教材需先确认年级、学期和学年')
         return self
 
     def subject_status(self):
         result = {}
         for subject in ('chinese', 'math', 'english'):
             book = next((b for b in self.textbooks if b.subject == subject), None)
-            aligned = bool(book and book.status == 'verified' and book.material_type == 'student_textbook'
+            aligned = bool(self.grade and self.semester and self.academic_year and book and book.status == 'verified' and book.material_type == 'student_textbook'
                            and book.progress_confirmed and book.current_unit)
             result[subject] = {
                 'textbook_aligned': aligned,
