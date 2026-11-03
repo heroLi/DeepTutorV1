@@ -23,6 +23,7 @@ from core import ROOT, LessonPlan, NewLesson, load_env, make_plan
 from curriculum import CurriculumConfig
 from tutor_provider import TutorRequest, TutorResponse, generate_hint
 from render import render_lesson
+import learning_flow
 
 load_env()
 DATA = Path(os.environ.get('TUTOR_DATA_DIR', str(ROOT/'data'))).resolve()
@@ -58,6 +59,7 @@ with db() as c:
       learner TEXT PRIMARY KEY, config TEXT NOT NULL, revision INTEGER NOT NULL, updated TEXT NOT NULL);
 
     ''')
+    learning_flow.initialize(c)
     c.execute("UPDATE lessons SET state='failed',message='服务曾重启，可重新生成' WHERE state IN ('queued','rendering')")
 
 app = FastAPI(title='小步讲题', docs_url='/docs')
@@ -100,6 +102,11 @@ def get_lesson(lesson_id, learner):
 @app.get('/')
 def home():
     return FileResponse(ROOT/'index.html')
+
+
+@app.get('/learn')
+def child_practice_page():
+    return FileResponse(ROOT/'learn.html')
 
 
 @app.get('/health')
@@ -164,6 +171,31 @@ def curriculum_save(learner: Learner, request: CurriculumUpdate):
 def offline_hint(request: TutorRequest):
     # HTTP callers cannot choose a provider, grant consent, or send learner history.
     return generate_hint(request)
+
+
+@app.post('/api/lessons/{lesson_id}/practice-session')
+def practice_create(lesson_id: str, request: learning_flow.SessionRequest):
+    return learning_flow.create_session(db, lesson_id, request)
+
+
+@app.get('/api/practice-sessions/{session_id}')
+def practice_read(session_id: str, learner: Learner):
+    return learning_flow.read_session(db, session_id, learner)
+
+
+@app.post('/api/practice-sessions/{session_id}/attempt')
+def practice_attempt(session_id: str, request: learning_flow.AttemptRequest):
+    return learning_flow.act(db, session_id, request, 'attempt')
+
+
+@app.post('/api/practice-sessions/{session_id}/hint')
+def practice_hint(session_id: str, request: learning_flow.ActionRequest):
+    return learning_flow.act(db, session_id, request, 'hint')
+
+
+@app.post('/api/practice-sessions/{session_id}/next')
+def practice_next(session_id: str, request: learning_flow.ActionRequest):
+    return learning_flow.act(db, session_id, request, 'next')
 
 
 @app.post('/api/lessons')
@@ -323,7 +355,7 @@ def memory(learner: Learner):
     return {'traces':raw,'summaries':summaries,
             'profile':{'attempts':len(raw),'wrong':sum(not x['correct'] for x in raw),
                        'reviewing':sum(x['status']=='继续复习' for x in summaries)},
-            'note':'本项目独立的练习记录，不等同于DeepTutor原生三层记忆；尚无跨题型能力评估。'}
+            'note':'旧版练习记录，不等同于DeepTutor原生三层记忆；孩子练习的首次作答、提示与新题证据单独保存在练习会话中，不计入这里的复习天数；尚无跨题型能力评估。'}
 
 
 @app.delete('/api/lessons/{lesson_id}')
@@ -334,6 +366,7 @@ def delete(lesson_id: str, learner: Learner):
         row = c.execute('SELECT state FROM lessons WHERE id=?',(lesson_id,)).fetchone()
         if row['state'] in ('queued','rendering'):
             raise HTTPException(409,'生成中暂不能删除')
+        learning_flow.delete_sessions(c, lesson_id)
         c.execute('DELETE FROM attempts WHERE lesson=?',(lesson_id,))
         c.execute('DELETE FROM lessons WHERE id=?',(lesson_id,))
     shutil.rmtree(DATA/lesson_id,ignore_errors=True)
