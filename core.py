@@ -227,7 +227,7 @@ def make_plan(request: NewLesson):
         if request.image:
             raise ValueError('当前DeepTutor桥接仅支持文字；题图请先用模型模式识别并确认题目')
         reference += '\nDeepTutor解题参考：\n' + deeptutor_reference(request.question,request.learner)
-    content = [{'type': 'text', 'text': f'年级：{3 if request.learner == "sister" else 1}年级。\n题目：{request.question}\n参考资料：\n{reference}'}]
+    content = [{'type': 'text', 'text': f'年级尚未在本次请求中确认，请使用小学基础方法，必要时请家长补充年级。\n题目：{request.question}\n参考资料：\n{reference}'}]
     if request.image:
         content.append({'type': 'image_url', 'image_url': {'url': image_content(request.image)}})
     return parse_plan(chat([{'role': 'system', 'content': SYSTEM}, {'role': 'user', 'content': content}]))

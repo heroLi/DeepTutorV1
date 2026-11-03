@@ -20,6 +20,8 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
 from core import ROOT, LessonPlan, NewLesson, load_env, make_plan
+from curriculum import CurriculumConfig
+from tutor_provider import TutorRequest, TutorResponse, generate_hint
 from render import render_lesson
 
 load_env()
@@ -52,6 +54,9 @@ with db() as c:
       id INTEGER PRIMARY KEY, lesson TEXT NOT NULL, learner TEXT NOT NULL,
       answer TEXT NOT NULL, correct INTEGER NOT NULL, created TEXT NOT NULL);
     CREATE INDEX IF NOT EXISTS attempt_learner ON attempts(learner, created);
+    CREATE TABLE IF NOT EXISTS curriculum_configs (
+      learner TEXT PRIMARY KEY, config TEXT NOT NULL, revision INTEGER NOT NULL, updated TEXT NOT NULL);
+
     ''')
     c.execute("UPDATE lessons SET state='failed',message='服务曾重启，可重新生成' WHERE state IN ('queued','rendering')")
 
@@ -109,6 +114,51 @@ def config():
             'ffmpeg':bool(shutil.which('ffmpeg') and shutil.which('ffprobe')),
             'deeptutor_ready':bool(os.environ.get('TUTOR_DEEPTUTOR_HOME_SISTER') and
                                   shutil.which(os.environ.get('TUTOR_DEEPTUTOR_BIN','deeptutor')))}
+
+
+class CurriculumUpdate(BaseModel):
+    model_config = {'extra': 'forbid'}
+    config: CurriculumConfig
+    expected_revision: int = Field(ge=0, strict=True)
+
+
+@app.get('/api/curriculum')
+def curriculum_get(learner: Learner):
+    with db() as c:
+        row = c.execute('SELECT * FROM curriculum_configs WHERE learner=?', (learner,)).fetchone()
+    config = CurriculumConfig.model_validate_json(row['config']) if row else CurriculumConfig()
+    return {'learner': learner, 'config': config.model_dump(mode='json'),
+            'revision': row['revision'] if row else 0, 'subjects': config.subject_status()}
+
+
+@app.put('/api/curriculum')
+def curriculum_save(learner: Learner, request: CurriculumUpdate):
+    with db() as c:
+        c.execute('BEGIN IMMEDIATE')
+        row = c.execute('SELECT revision,config FROM curriculum_configs WHERE learner=?', (learner,)).fetchone()
+        revision = row['revision'] if row else 0
+        if revision != request.expected_revision:
+            raise HTTPException(409, '配置已经更新，请重新打开后再保存')
+        if row:
+            previous = CurriculumConfig.model_validate_json(row['config'])
+            term_changed = any(getattr(previous, key) != getattr(request.config, key)
+                               for key in ('grade', 'semester', 'academic_year'))
+            if term_changed:
+                for book in request.config.textbooks:
+                    if book.status == 'verified':
+                        book.status = 'needs_update'
+                    book.verified_on = None
+                    book.progress_confirmed = False
+                    book.current_unit = ''
+        c.execute('INSERT INTO curriculum_configs VALUES(?,?,?,?) ON CONFLICT(learner) DO UPDATE SET config=excluded.config,revision=excluded.revision,updated=excluded.updated',
+                  (learner, request.config.model_dump_json(), revision+1, now()))
+    return curriculum_get(learner)
+
+
+@app.post('/api/tutor/hint', response_model=TutorResponse)
+def offline_hint(request: TutorRequest):
+    # HTTP callers cannot choose a provider, grant consent, or send learner history.
+    return generate_hint(request)
 
 
 @app.post('/api/lessons')

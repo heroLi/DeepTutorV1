@@ -27,6 +27,14 @@ node tests/test_offline_ui.js
 
 这些检查不替代原 pytest 全套或真实浏览器/儿童试用验收。2026-11-03 云端检查与限制见 `docs/OFFLINE_LEARNING_VALIDATION.md`。
 
+## P0 教材配置与离线提示接口
+
+新增“教材与学期”家长配置：上海五四学制、年级学期、三科实际用书和核对状态。默认不推定孩子年级，不生成教材单元表；新学期需要重新核对。配置可保存与修改，但不是三科课程已完成。
+
+新增 `/api/tutor/hint` 规则提示接口和可注入的 Fake 提供方，用于合成数据测试。真实 DeepSeek 仍未接通。当前完整讲解页面尚未切换为“先试再提示”的新状态机。
+
+离线运行依赖范围见 `requirements-offline.txt`，CI固定测试版本见 `requirements-ci.txt`；都不需要联网配音组件。详细接口、状态与验收边界见 `docs/P0_FOUNDATION.md`。
+
 ## 先看成品
 
 - `examples/rendered/lesson.mp4`：12颗糖平均分给3人的配音动画，约38秒。
