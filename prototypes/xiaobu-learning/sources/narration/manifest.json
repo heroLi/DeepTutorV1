@@ -1,0 +1,60 @@
+{
+  "voice": "Tingting",
+  "rate": 160,
+  "files": [
+    {
+      "file": "narration-01.aiff",
+      "text": "今天，我们来分糖果。十二颗糖，平均分给三个小朋友，每人分到几颗？",
+      "duration_seconds": 7.656145,
+      "size_bytes": 341732
+    },
+    {
+      "file": "narration-02.aiff",
+      "text": "先找条件。一共十二颗糖，分给三个人。平均分，就是每个人得到的糖一样多。",
+      "duration_seconds": 8.04839,
+      "size_bytes": 359030
+    },
+    {
+      "file": "narration-03.aiff",
+      "text": "我们一颗一颗轮流分。第一轮，每人一颗。一共分掉三颗，还剩九颗。",
+      "duration_seconds": 7.132381,
+      "size_bytes": 318634
+    },
+    {
+      "file": "narration-04.aiff",
+      "text": "第二轮，每人再得一颗。现在每人两颗，还剩六颗。",
+      "duration_seconds": 5.368481,
+      "size_bytes": 240846
+    },
+    {
+      "file": "narration-05.aiff",
+      "text": "第三轮，每人有三颗，还剩三颗。",
+      "duration_seconds": 3.673424,
+      "size_bytes": 166094
+    },
+    {
+      "file": "narration-06.aiff",
+      "text": "最后一轮，每人又得一颗。糖分完了，每人正好四颗。",
+      "duration_seconds": 5.439501,
+      "size_bytes": 243978
+    },
+    {
+      "file": "narration-07.aiff",
+      "text": "所以，十二除以三，等于四。十二是糖的总数，三是人数，四是每个人得到的颗数。",
+      "duration_seconds": 8.349751,
+      "size_bytes": 372320
+    },
+    {
+      "file": "narration-08.aiff",
+      "text": "再检查一下。四乘三等于十二。三个人都是四颗，刚好用完十二颗，答案正确。",
+      "duration_seconds": 8.136508,
+      "size_bytes": 362916
+    },
+    {
+      "file": "narration-09.aiff",
+      "text": "现在轮到你了。十八颗糖，平均分给三个小朋友，每人几颗？先暂停想一想，再回到练习里试一试。",
+      "duration_seconds": 10.289116,
+      "size_bytes": 457846
+    }
+  ]
+}
