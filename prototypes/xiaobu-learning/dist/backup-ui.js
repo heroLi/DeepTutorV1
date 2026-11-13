@@ -36,9 +36,10 @@ export function persistBackupRestore(storage,current,next){
   storage.setItem(STORE_KEY,JSON.stringify(next));
  }catch(error){if(error?.code==='BACKUP_STORE_CHANGED')throw error;throw problem('BACKUP_SAVE_FAILED');}
 }
-export function createBackupController({getStore,commitStore,onState=()=>{},onRestored=()=>{},readFile=readBackupFile,download=downloadBackupFile,timeoutMs=5000,notice=''}={}){
+export function createBackupController({getStore,commitStore,onState=()=>{},onRestored=()=>{},readFile=readBackupFile,download=downloadBackupFile,timeoutMs=5000,notice='',canRestore=()=>true,restoreBlockReason='当前页面仅能临时学习，不能选择文件或恢复记录。请先下载需要保留的档案备份，再在独立的空白浏览器环境中恢复。'}={}){
  const profileId=getStore().current;let disposed=false,epoch=0,pending=null,aborter=null,timer=null;
- const target=()=>{try{return {empty:isEmptyBackupTarget(getStore(),profileId),invalid:false};}catch{return {empty:false,invalid:true};}};
+ const restoreAllowed=()=>{try{return typeof canRestore==='function'?canRestore()===true:canRestore===true;}catch{return false;}};
+ const target=()=>{try{return {canRestore:restoreAllowed(),restoreBlockReason,empty:isEmptyBackupTarget(getStore(),profileId),invalid:false};}catch{return {canRestore:false,restoreBlockReason,empty:false,invalid:true};}};
  let state={phase:'idle',message:notice,preview:null,targetProfileId:profileId,...target()};
  if(state.invalid){state.phase='error';state.message='本机记录不符合当前备份规则，备份与恢复暂不可用；原记录未改动。';}
  const active=()=>!disposed&&getStore().current===profileId;
@@ -48,6 +49,7 @@ export function createBackupController({getStore,commitStore,onState=()=>{},onRe
   getState:()=>Object.freeze({...state}),
   async choose(file){
    if(!active())return;stop();const token=epoch;
+   if(!restoreAllowed()){emit({phase:'error',preview:null,message:restoreBlockReason});return;}
    if(!file){emit({phase:'idle',preview:null,message:''});return;}
    if(!target().empty){emit({phase:'error',preview:null,message:messages.TARGET_NOT_EMPTY});return;}
    if(!Number.isSafeInteger(file.size)||file.size<1){emit({phase:'error',preview:null,message:messages.INVALID_BACKUP});return;}
@@ -56,6 +58,7 @@ export function createBackupController({getStore,commitStore,onState=()=>{},onRe
    try{
     const text=await Promise.race([Promise.resolve().then(()=>readFile(file,{signal})),new Promise((_,reject)=>{signal.addEventListener('abort',()=>reject(problem('BACKUP_READ_FAILED')),{once:true});timer=setTimeout(()=>{reject(problem('BACKUP_READ_TIMEOUT'));aborter?.abort();},timeoutMs);})]);
     if(!active()||token!==epoch)return;
+    if(!restoreAllowed()){stop();emit({phase:'error',preview:null,message:restoreBlockReason});return;}
     const backup=parseProfileBackup(text);pending=backup;emit({phase:'preview',preview:backupPreview(backup),message:'文件已检查，尚未恢复。请核对下面的档案和记录数量。'});
    }catch(error){if(active()&&token===epoch)emit({phase:'error',preview:null,message:message(error)});}
    finally{if(token===epoch){clearTimeout(timer);timer=null;aborter=null;}}
@@ -63,7 +66,9 @@ export function createBackupController({getStore,commitStore,onState=()=>{},onRe
   cancel(){if(!active())return;stop();emit({phase:'idle',preview:null,message:'已取消，原记录没有更改。'});},
   invalidate(){if(!active())return;stop();emit({phase:'error',preview:null,message:messages.BACKUP_STORE_CHANGED});},
   confirm(){
-   if(!active()||state.phase!=='preview'||!pending)return false;
+   if(!active())return false;
+   if(!restoreAllowed()){stop();emit({phase:'error',preview:null,message:restoreBlockReason});return false;}
+   if(state.phase!=='preview'||!pending)return false;
    const backup=pending;let next;
    try{next=restoreProfileBackup(getStore(),backup,profileId);commitStore(next);}
    catch(error){if(error?.code==='BACKUP_STORE_CHANGED'||error?.code==='TARGET_NOT_EMPTY'){stop();emit({phase:'error',preview:null,message:message(error)});}else emit({phase:'preview',message:message(error)});return false;}
@@ -84,7 +89,7 @@ export function mountBackup(main,{getStore,commitStore,onRestored,notice='',scop
  function render(s){
   const focusedAction=scope.document?.activeElement?.dataset?.backupAction;
   const p=s.preview,c=p?.counts;
-  panel.innerHTML=`<h2 id="backup-title">家长保管 · 本地备份</h2><p>只导出当前匿名档案，文件含学习记录，请由家长保管。文件选择、检查和恢复都在此浏览器完成，不会上传，也不自动跨设备同步。只检查格式与题目规则，不核验记录的来源或真实性。</p><div class="backup-actions"><button type="button" class="secondary" data-backup-action="export" ${s.phase==='reading'||s.invalid?'disabled':''}>下载档案 ${s.targetProfileId} 的备份</button></div><label class="backup-file-label" for="backup-file">选择本机备份文件（JSON，最多 2 MiB）</label><input id="backup-file" type="file" accept=".json,application/json" aria-describedby="backup-target-note" ${!s.empty?'disabled':''}><p id="backup-target-note" class="muted">恢复目标：本机档案 ${s.targetProfileId}。${s.empty?'当前为空，可以先选择文件并核对。':'当前已有记录，不能恢复到这里。请切换到空档案；不覆盖、不合并。'}</p>${p?`<div class="backup-preview"><h3 id="backup-preview-title" tabindex="-1">恢复前请核对</h3><dl><div><dt>备份来源</dt><dd>匿名档案 ${esc(p.sourceProfileId)}</dd></div><div><dt>文件生成时间</dt><dd>${esc(new Date(p.createdAt).toLocaleString('zh-CN'))}（按本机时区显示，依赖来源设备时钟）</dd></div><div><dt>恢复目标</dt><dd>本机空档案 ${s.targetProfileId}</dd></div><div><dt>当前练习 / 完成小结</dt><dd>${c.practices} / ${c.completedPractices}</dd></div><div><dt>基础错题 / 已交测评</dt><dd>${c.wrongs} / ${c.assessments}</dd></div><div><dt>未交测评</dt><dd>${c.activeTests}</dd></div><div><dt>小步引导 / 复习安排</dt><dd>${c.loopRuns} / ${c.reviews}</dd></div></dl><p>这会复制备份中的进度到空档案 ${s.targetProfileId}，不改另一档案，也不删除原文件。无论来源与目标字母是否相同，请确认是你要保管的那份记录。</p><button type="button" class="primary" data-backup-action="confirm">确认恢复到空档案 ${s.targetProfileId}</button></div>`:''}${s.phase==='reading'||p?'<button type="button" class="text-button" data-backup-action="cancel">取消本次恢复</button>':''}<p id="backup-status" class="backup-status" tabindex="-1" role="status" aria-live="polite" aria-atomic="true">${esc(s.message)}</p><p class="backup-boundary">匿名档案不是账号或家长锁。同一浏览器的使用者都可查看、下载记录。恢复前会检查其他页面的已保存更改，但检查不能锁住其他页面，也不是同步；操作时请关闭其他学习页面。</p>`;
+  panel.innerHTML=`<h2 id="backup-title">家长保管 · 本地备份</h2><p>只导出当前匿名档案，文件含学习记录，请由家长保管。文件选择、检查和恢复都在此浏览器完成，不会上传，也不自动跨设备同步。只检查格式与题目规则，不核验记录的来源或真实性。</p><div class="backup-actions"><button type="button" class="secondary" data-backup-action="export" ${s.phase==='reading'||s.invalid?'disabled':''}>下载档案 ${s.targetProfileId} 的备份</button></div><label class="backup-file-label" for="backup-file">选择本机备份文件（JSON，最多 2 MiB）</label><input id="backup-file" type="file" accept=".json,application/json" aria-describedby="backup-target-note" ${!s.empty||!s.canRestore?'disabled':''}><p id="backup-target-note" class="muted">恢复目标：本机档案 ${s.targetProfileId}。${!s.canRestore?esc(s.restoreBlockReason):s.empty?'当前为空，可以先选择文件并核对。':'当前已有记录，不能恢复到这里。请切换到空档案；不覆盖、不合并。'}</p>${p?`<div class="backup-preview"><h3 id="backup-preview-title" tabindex="-1">恢复前请核对</h3><dl><div><dt>备份来源</dt><dd>匿名档案 ${esc(p.sourceProfileId)}</dd></div><div><dt>文件生成时间</dt><dd>${esc(new Date(p.createdAt).toLocaleString('zh-CN'))}（按本机时区显示，依赖来源设备时钟）</dd></div><div><dt>恢复目标</dt><dd>本机空档案 ${s.targetProfileId}</dd></div><div><dt>当前练习 / 完成小结</dt><dd>${c.practices} / ${c.completedPractices}</dd></div><div><dt>基础错题 / 已交测评</dt><dd>${c.wrongs} / ${c.assessments}</dd></div><div><dt>未交测评</dt><dd>${c.activeTests}</dd></div><div><dt>小步引导 / 复习安排</dt><dd>${c.loopRuns} / ${c.reviews}</dd></div></dl><p>这会复制备份中的进度到空档案 ${s.targetProfileId}，不改另一档案，也不删除原文件。无论来源与目标字母是否相同，请确认是你要保管的那份记录。</p><button type="button" class="primary" data-backup-action="confirm">确认恢复到空档案 ${s.targetProfileId}</button></div>`:''}${s.phase==='reading'||p?'<button type="button" class="text-button" data-backup-action="cancel">取消本次恢复</button>':''}<p id="backup-status" class="backup-status" tabindex="-1" role="status" aria-live="polite" aria-atomic="true">${esc(s.message)}</p><p class="backup-boundary">匿名档案不是账号或家长锁。同一浏览器的使用者都可查看、下载记录。恢复前会检查其他页面的已保存更改，但检查不能锁住其他页面，也不是同步；操作时请关闭其他学习页面。</p>`;
   if(s.phase==='preview'&&renderedPhase!=='preview')panel.querySelector?.('#backup-preview-title')?.focus({preventScroll:false});
   else if(['export','confirm','cancel'].includes(focusedAction))panel.querySelector?.(`[data-backup-action="${focusedAction}"]`)?.focus({preventScroll:true});
   renderedPhase=s.phase;

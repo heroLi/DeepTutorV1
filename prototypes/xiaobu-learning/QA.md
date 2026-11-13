@@ -1,3 +1,28 @@
+# Protected invalid-storage recovery verification — 2026-11-13
+
+## Defect and repair
+- Isolated synthetic reproduction confirmed the old loader could report malformed stored data as a blank temporary profile while the storage coordinator still permitted a later write. That later write replaced the original invalid string. No real learner records were used or altered in diagnosis.
+- The loader now reports structured status for empty, valid, unreadable, malformed JSON/schema, unknown version and partially invalid loop data. The coordinator classifies its single captured snapshot during construction, before any public write can run. Any non-null invalid/partly discarded snapshot makes that page memory-only for its whole lifetime. Empty-string storage is not treated as an absent key.
+- Independently valid profiles or base records can be inspected and exported from memory, but the sanitized copy never overwrites the original. An external repair/read-access recovery does not re-enable the old page's writes; a fresh load must capture the repaired baseline.
+- A separately labeled, explicit recovery export wraps the exact captured original string as JSON, preserving escaped content, NUL and unpaired surrogate code units. Both original and serialized output are limited to 16 MiB without truncation. The wrapper is rejected by normal profile import. Nothing renders the raw string or automatically downloads, uploads, deletes or resets it.
+- Temporary-mode restore is blocked in the chooser and controller choose/late-read/confirm paths. Existing standard export remains available for usable records. Clear confirmation explicitly describes only the current page's temporary memory; completion no longer claims a durable save in this mode.
+
+## Final automated verification
+- 294/294 tests passed, including 11 new recovery/model groups and 7 app/controller groups. Independent review, syntax checks and `git diff --check` passed.
+- Covered malformed JSON, empty strings, unknown versions, invalid nested schema, independently valid other-profile recovery, partial loop data, direct writes before load, practice/profile/clear/loop/restore attempts, unreadable startup, external repair, detached snapshot loads, bounded export and exact original-string preservation. Existing cross-page conflict tests remain green; this is still best-effort detection rather than an atomic lock.
+- Added an end-to-end model round trip for usable A/B data from both a partial loop and a damaged-profile snapshot: normal export, strict parse, restore into an independent empty store, persist, and valid reload. The protected source remained byte-for-string identical with zero writes.
+
+## Browser acceptance and limits
+- A clearly labeled temporary Chromium fixture loaded the actual final application HTML/modules against an isolated in-memory synthetic storage object. It never read or overwrote native browser storage. Visible counters showed zero application writes and unchanged original strings after temporary practice, profile switching and confirmed temporary clear.
+- Malformed JSON and unknown-version cases displayed specific protection messages, disabled file restore even on empty profiles, and exposed the separately labeled original-copy action. A partial-loop case preserved its usable original math record while leaving the complete original string unchanged.
+- Simulated an independent external repair, then switched profiles in the old page: zero writes and restore remained disabled. Only a fresh application load read the valid repaired record; switching to its empty B profile then wrote normally and enabled the ordinary file chooser. This was a synthetic-backend browser test, not a new native cross-tab event test.
+- The original-copy download was clicked once. The application reported that download had been initiated, but the browser download-event wait timed out and its internal download-list page was unavailable to the browser tool. No repeat download or alternate security-bypass route was attempted. Browser disk completion was therefore not confirmed. Exact export content, no automatic download and failure handling were verified by automated tests; the UI correctly asks parents to confirm their download themselves.
+- The 390×844 iframe had equal 375px client/scroll width and a 54px recovery-export button; the warning, separate export controls and disabled restore remained readable. Desktop layout was also inspected. These checks do not establish physical-phone/iPad, Safari or screen-reader acceptance.
+- After closing the isolated fixture, reloaded the ordinary local preview: the earlier synthetic B history still showed ten records, six pending, one corrected and three loop errors, without a temporary-storage warning. No application-origin console errors were observed. Temporary fixture files were removed before packaging and the preview server was stopped.
+- No real child data, microphone/recording, file upload, cloud database, real API call, credential, new dependency, paid resource or sharing change was involved. A recovery wrapper is an inspection aid, not automatic migration or a guarantee that damaged history can be repaired. Browser-local records remain neither cross-device sync nor reliable cloud backup.
+
+---
+
 # Filtered, paginated wrong notebook verification — 2026-11-13
 
 ## Final checks

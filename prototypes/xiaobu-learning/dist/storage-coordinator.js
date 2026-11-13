@@ -4,7 +4,10 @@ import {loadStore,STORE_KEY} from './model.js';
 // atomic across tabs. No automatic merge, retry, deletion or baseline refresh.
 export function createLearningStorage({storage,onBlocked=()=>{}}={}){
  let baseline,initial,mode='persistent',reason='',busy=false;
+ const capturedLoad=()=>loadStore({getItem(){if(initial===undefined)throw Error('Initial read failed');return initial;}});
  try{initial=baseline=storage.getItem(STORE_KEY);}catch{mode='temporary';reason='initial-read-failed';}
+ const loaded=capturedLoad();
+ if(mode==='persistent'&&!['empty','valid'].includes(loaded.status)){mode='temporary';reason=loaded.status;}
  const getState=()=>Object.freeze({mode,reason});
  const error=code=>Object.assign(new Error(code),{code});
  const block=why=>{
@@ -39,7 +42,16 @@ export function createLearningStorage({storage,onBlocked=()=>{}}={}){
   }
  });
  return Object.freeze({
-  load:()=>loadStore({getItem(){if(mode==='temporary'&&initial===undefined)throw error('STORAGE_TEMPORARY');return initial;}}),
+  load:()=>structuredClone(loaded),
+  exportRecoverySnapshot({createdAt=new Date().toISOString()}={}){
+   if(mode!=='temporary'||typeof initial!=='string')throw error('RECOVERY_UNAVAILABLE');
+   if(typeof createdAt!=='string'||!Number.isFinite(Date.parse(createdAt))||new Date(createdAt).toISOString()!==createdAt)throw error('RECOVERY_INVALID_DATE');
+   const limit=16*1024*1024;
+   if(new TextEncoder().encode(initial).byteLength>limit)throw error('RECOVERY_TOO_LARGE');
+   const text=JSON.stringify({format:'xiaobu-storage-recovery',version:1,createdAt,reason,raw:initial},null,2);
+   if(new TextEncoder().encode(text).byteLength>limit)throw error('RECOVERY_TOO_LARGE');
+   return {text,filename:`xiaobu-recovery-${createdAt.slice(0,10)}.json`};
+  },
   storage:facade,check,getState,
   handleStorageEvent(event){
    if(event?.storageArea!==storage||(event.key!==STORE_KEY&&event.key!==null))return mode!=='blocked';

@@ -59,5 +59,25 @@ function validStore(s){
  p.practiceCompleted.every(r=>r&&typeof r.id==='string'&&subjects[r.subject]&&date(r.date)&&Array.isArray(r.records)&&r.records.length===2&&r.records.every(x=>x&&typeof x.solved==='boolean'&&[true,false,null].includes(x.firstCorrect)&&Number.isInteger(x.hints)))&&
  p.wrongs.every(r=>{const q=r&&typeof r.qid==='string'&&questionById(r.qid);return q&&typeof r.id==='string'&&(r.chosen===null||q.choices.includes(r.chosen))&&r.expected===q.answer&&date(r.date)&&['练习','单元测评'].includes(r.source)&&(r.correctedAt===null||date(r.correctedAt))&&Array.isArray(r.retries)&&r.retries.every(a=>a&&q.choices.includes(a.chosen)&&date(a.date)&&typeof a.correct==='boolean');})&&p.assessments.every(t=>test(t)&&t.completedAt)&&(p.activeTest===null||test(p.activeTest));});
 }
-export function loadStore(storage){try{const raw=storage.getItem(STORE_KEY);if(!raw)return {store:createStore(),warning:''};const s=JSON.parse(raw);if(!validStore(s))throw Error('Invalid data');let warning='';for(const key of profileIds){const p=s.profiles[key];if(p.learningLoop!==undefined&&!validLoopState(p.learningLoop)){delete p.learningLoop;warning='小步引导记录格式异常，本次未载入该部分；原练习、测评与错题仍保留。旧浏览器数据未主动删除，新操作会尝试保存。';}}return {store:s,warning};}catch{return {store:createStore(),warning:'无法读取本地记录，已进入空白临时档案；旧数据未主动删除。新操作会尝试重新保存。'};}}
+export function loadStore(storage){
+ const warning='无法读取完整本地记录，当前仅使用临时档案；原始数据保持不变，请先导出恢复快照。';
+ const accepts=value=>{try{return validStore(value);}catch{return false;}};
+ const result=(status,store=createStore())=>({store,status,warning:['empty','valid'].includes(status)?'':status==='unreadable'?'无法读取本地记录，当前仅使用临时档案；请恢复浏览器存储访问后重新加载，当前页面不会重新尝试保存。':status==='partial-invalid-loop'?'小步引导记录格式异常，本次未载入该部分；原练习、测评与错题仍保留。当前仅使用临时档案，原始数据保持不变，请先导出恢复快照。':warning});
+ let raw;try{raw=storage.getItem(STORE_KEY);}catch{return result('unreadable');}
+ if(raw===null)return result('empty');
+ let s;try{s=JSON.parse(raw);}catch{return result('invalid-json');}
+ if(s&&typeof s==='object'&&Object.hasOwn(s,'version')&&s.version!==1)return result('unknown-version');
+ let status='valid';
+ if(!accepts(s)){
+  // Recover independently valid profiles for inspection/export in memory only.
+  const recovered=createStore();
+  if(s?.version===1&&s.profiles&&typeof s.profiles==='object'){
+   if(profileIds.includes(s.current))recovered.current=s.current;
+   for(const key of profileIds){if(!Object.hasOwn(s.profiles,key))continue;const candidate=createStore();candidate.profiles[key]=s.profiles[key];if(accepts(candidate))recovered.profiles[key]=s.profiles[key];}
+  }
+  s=recovered;status='invalid-schema';
+ }
+ for(const key of profileIds){const p=s.profiles[key];if(p.learningLoop!==undefined&&!validLoopState(p.learningLoop)){delete p.learningLoop;if(status==='valid')status='partial-invalid-loop';}}
+ return result(status,s);
+}
 export function saveStore(storage,store){try{storage.setItem(STORE_KEY,JSON.stringify(store));return '';}catch{return '本次更改未能保存（浏览器存储不可用或空间不足），刷新后可能丢失。';}}
