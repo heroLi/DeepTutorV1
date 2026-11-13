@@ -1,7 +1,8 @@
 // Deployment-neutral handler. Not wired to the static Site or a listening server.
 // Authentication and a real atomic persistent ledger MUST come from trusted server code.
 import {exactObject, dialogueFixture, syntheticDialogue, validateDialogue, fault} from './catalogue.js';
-import {requireLiveApproval, readLimitedJson, verifyLiveBinding, providerCostBound} from './deepseek.js';
+import {requireLiveApproval, verifyLiveBinding, providerCostBound} from './deepseek.js';
+import {readRequestJson} from './request-body.js';
 const KEY = /^[A-Za-z0-9_-]{1,64}$/;
 export function validateRequest(input) {
   if (!exactObject(input, ['requestId','profileId','questionId','intent']) || !KEY.test(input.requestId) ||
@@ -11,8 +12,8 @@ export function validateRequest(input) {
 }
 function safePrincipal(principal) { return principal && typeof principal.id === 'string' && KEY.test(principal.id); }
 export function createTutorService({mode = 'mock', provider, authenticate, authorizeProfile, ledger,
-  approval, reservationMicros, origin} = {}) {
-  if (!['mock','offline-test','live'].includes(mode) || typeof authenticate !== 'function' || typeof authorizeProfile !== 'function' ||
+  approval, reservationMicros, origin, bodyTimeoutMs=2000} = {}) {
+  if ((!Number.isSafeInteger(bodyTimeoutMs) || bodyTimeoutMs<1 || bodyTimeoutMs>10000) || !['mock','offline-test','live'].includes(mode) || typeof authenticate !== 'function' || typeof authorizeProfile !== 'function' ||
       !ledger || typeof ledger.reserveAndClaim !== 'function' || typeof ledger.settle !== 'function' ||
       !Number.isSafeInteger(reservationMicros) || reservationMicros <= 0 || typeof origin !== 'string') throw fault('INVALID_CONFIG');
   let normalized; try { normalized = new URL(origin); } catch { throw fault('INVALID_CONFIG'); }
@@ -26,10 +27,8 @@ export function createTutorService({mode = 'mock', provider, authenticate, autho
   if (mode === 'offline-test' && (provider?.mode !== 'offline-test' || typeof provider.request !== 'function')) throw fault('INVALID_CONFIG');
   if (mode === 'mock' && provider !== undefined) throw fault('INVALID_CONFIG');
   const limits = Object.freeze({scope:mode==='live'?approval.reference:'offline-fixture',
-    limitMicros:mode==='live'?approval.spendLimitMicros:1000,reservationMicros});
-  async function execute(request, input) {
-    const principal = await authenticate(request);
-    if (!safePrincipal(principal)) throw fault('UNAUTHENTICATED');
+    currency:mode==='live'?approval.currency:'TEST',limitMicros:mode==='live'?approval.spendLimitMicros:1000,reservationMicros});
+  async function execute(request, input, principal) {
     const body = validateRequest(input);
     if (await authorizeProfile(principal, body.profileId) !== true) throw fault('FORBIDDEN');
     if (request.signal.aborted) throw fault('CANCELLED');
@@ -66,17 +65,19 @@ export function createTutorService({mode = 'mock', provider, authenticate, autho
       if (request.method !== 'POST') throw fault('METHOD_NOT_ALLOWED');
       if (request.headers.get('origin') !== origin || request.headers.get('x-xiaobu-request') !== '1' ||
           (request.headers.get('sec-fetch-site') && request.headers.get('sec-fetch-site') !== 'same-origin')) throw fault('CSRF_REJECTED');
+      const principal = await authenticate(request);
+      if (!safePrincipal(principal)) throw fault('UNAUTHENTICATED');
       if (!/^application\/json(?:\s*;|$)/i.test(request.headers.get('content-type') || '')) throw fault('INVALID_REQUEST');
       let input;
-      try { input = await readLimitedJson(request, 1024, request.signal); }
+      try { input = await readRequestJson(request, {timeoutMs:bodyTimeoutMs}); }
       catch(error) { throw fault(error?.code==='INVALID_RESPONSE'?'INVALID_REQUEST':error?.code||'INVALID_REQUEST'); }
-      const result = await execute(request,input);
+      const result = await execute(request,input,principal);
       return json({ok:true,result},200);
     } catch (error) {
       const statuses = {NOT_FOUND:404,METHOD_NOT_ALLOWED:405,CSRF_REJECTED:403,INVALID_REQUEST:400,
-        UNAUTHENTICATED:401,FORBIDDEN:403,CANCELLED:409,TIMEOUT:504,INVALID_RESPONSE:502,RESPONSE_TOO_LARGE:400,
+        UNAUTHENTICATED:401,FORBIDDEN:403,BODY_TIMEOUT:408,CANCELLED:409,TIMEOUT:504,INVALID_RESPONSE:502,RESPONSE_TOO_LARGE:400,
         PROVIDER_UNAVAILABLE:502,BUDGET_EXHAUSTED:429,INFLIGHT_LIMIT:429,IDEMPOTENCY_CONFLICT:409,
-        IN_PROGRESS:409,LEDGER_UNAVAILABLE:503,LIVE_NOT_READY:503,PRICING_EXPIRED:503,COST_BOUND_EXCEEDED:502};
+        IN_PROGRESS:409,RATE_LIMIT:429,SCOPE_FROZEN:503,SCOPE_EXPIRED:503,SCOPE_MISMATCH:503,CLOCK_INVALID:503,SETTLEMENT_CONFLICT:503,LEDGER_UNAVAILABLE:503,LIVE_NOT_READY:503,PRICING_EXPIRED:503,COST_BOUND_EXCEEDED:502};
       if (Object.hasOwn(statuses,error?.code)) { code=error.code;status=statuses[code]; }
       return json({ok:false,error:{code}},status);
     }

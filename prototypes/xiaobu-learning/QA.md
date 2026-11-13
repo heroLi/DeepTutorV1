@@ -1,3 +1,18 @@
+# Persistent backend and identity-adapter verification — 2026-11-13
+
+- 135/135 Node tests passed: 13 new persistent-ledger tests and 7 runtime/auth/body tests, plus the full prior suite. Syntax and whitespace checks passed. No new runtime dependency was installed; tests use built-in SQLite (Node 22.13+).
+- Temporary SQLite files execute the real schema and D1-compatible SQL adapter. Two worker threads with independent database connections and a start barrier compete for the final available reservation and the same request ID. Exactly one claim wins; duplicate settlement charges once.
+- Closing/reopening the database retains pending claims, cached success/error, spent/reserved balances, frozen scopes and limits. Lost responses after committed reservation or settlement do not create a free retry. No claim timeout or scope expiry refunds uncertain costs.
+- Write-time guards reject another owner/profile, disabled profiles, changed fingerprints/currency/cap, scope reuse, invalid periods, low budget, too many in-flight calls, rolling-rate excess and clock rollback. Admin helpers are not exposed as HTTP routes.
+- The composed runtime was tested with real SQLite, synthetic identity admission, synthetic CNY approval/pricing and an injected fake provider along the live code path. It consumed its reservation persistently, replayed without another call after restart and blocked the next request above budget. This was NOT a real DeepSeek call. Mock/TEST mismatch, expired scopes, missing credentials/approval/transport and arbitrary child-text/audio fields were rejected.
+- Authentication rejects unadmitted/header-forged requests before reading the body or using the ledger. Only an explicitly trusted Sites ingress may supply the stable user ID; email/name are ignored, and bypass access does not become user identity. The real platform ingress has not been wired or verified.
+- Incoming reads are limited to 1 KiB and a deadline; malformed UTF-8/JSON, oversize, aborted or hanging streams fail closed. Even hanging cancellation and late body data cannot reach a reservation or provider call.
+- Independent read-only review found no blocking HTTP-exploitable defect; the suggested SQLite+CNY full-runtime regression was added and passed.
+- No frontend/media or sharing changes. Browser layout QA was not repeated because shipped assets are unchanged; all prior UI/media model tests passed. The hosted Site remains version 6 with local simulated dialogue, not this backend.
+- No production migration, D1 provisioning, real identity record, credential lookup, paid call or actual child data was used. Genuine D1 transactions and Sites dispatch boundaries still require hosted staging acceptance before enabling live mode.
+
+---
+
 # Local dialogue and DeepSeek adapter verification — 2026-11-13
 
 ## Final checks and boundaries

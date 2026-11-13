@@ -2,7 +2,7 @@
 
 ## Current truth
 
-The private Site is static. Its dialogue remains a clearly labelled local, finite mock. It sends no question, answer, profile, microphone recording or transcript to this adapter or DeepSeek. This change adds a deployment-neutral server HTTP adapter and offline tests, not a running API, automatic video generation or arbitrary-question tutoring. No real credentials were read and no paid API request was made.
+The private Site is static. Its dialogue remains a clearly labelled local, finite mock. It sends no question, answer, profile, microphone recording or transcript to this adapter or DeepSeek. The source includes a deployment-neutral server runtime, Sites identity adapter, persistent SQL ledger and offline tests, not a deployed API, automatic video generation or arbitrary-question tutoring. No real credentials were read and no paid API request was made.
 
 The first integration scope is intentionally only nine authored synthetic questions and four intents. Provider output must exactly match the reviewed canonical fixture, including a recomputed arithmetic answer. This tests protocol and safety boundaries, not model teaching quality. A real model may be rejected for wording differences. Expanding to free-form explanations needs separate content evaluation and consent design.
 
@@ -32,21 +32,29 @@ Pricing uses integer millionths of the stated currency, with separately configur
 
 Every attempted provider outcome, including timeout or error, consumes the full reservation. No automatic refund, retry or uncertain-claim release is performed. A settlement outage leaves the reservation held. Credentials, price records and approval controls must exist only in trusted server configuration; none belong in static Site files.
 
-## Required persistent ledger semantics (not implemented here)
+## Persistent ledger implementation and deployment boundary
 
-The production adapter must provide `reserveAndClaim({key,fingerprint,scope,limitMicros,reservationMicros})`, `settle({token,chargeMicros,result,errorCode})`, and `freezeScope(scope)` with durable transactional behavior:
+`server/d1-ledger.js` now provides `reserveAndClaim({key,fingerprint,scope,limitMicros,reservationMicros})`, `settle({token,chargeMicros,result,errorCode})`, and `freezeScope(scope)` with durable transactional behavior:
 
 - Atomically enforce total spent plus all in-flight reservations, per-principal rate/in-flight limits, and frozen scopes across processes and restarts.
 - Key requests by approval scope, authenticated principal and request ID. Fingerprint includes profile, question and intent. Changed fingerprints conflict; pending duplicates return IN_PROGRESS; settled duplicates replay their validated result or stable sanitized error.
 - Never execute two upstream requests for one claim, even after crashes. Store reservation and outcome atomically; ambiguous outcomes remain held for reconciliation. Settlement is idempotent and cannot exceed the reservation.
 - Use unique approval-period references. Persist freezes atomically and require operator reconciliation before unfreezing. Protect records with access control, minimal retention and backups.
 
-The test ledger is only an in-memory fake and is not a production implementation. HTTP header checks are CSRF defense in depth, not session authentication. Production authentication must validate a server session and bind profile ownership; raw user/profile headers cannot establish identity.
+The original protocol tests retain an in-memory fake. New ledger/runtime tests instead run the actual SQL migration and adapter against temporary SQLite files, including two worker threads with independent connections and a start barrier. They verify restart persistence, full-charge idempotent settlement, duplicate claims, competing final reservations, rolling rate limits, expiration/freeze and lost responses after committed writes. This is not a hosted-D1 certification.
+
+`server/migrations/0001_tutor.sql` is schema-only and has never been applied to a cloud database. Write-time SQL triggers recheck ownership, active profile, matching scope/currency/cap, expiry, frozen state, remaining money, in-flight count and rolling request window in the same transaction as each reservation. Existing scope caps/owner/expiry and claim identity cannot be rewritten or deleted through the adapter. Pending claims do not expire into free budget. `createD1LedgerAdmin` is an operator-only provisioning API, never an HTTP route: it registers anonymous A/B profiles and creates a new immutable approval period. Reusing its reference fails; re-registering a disabled profile does not reactivate it.
+
+`server/runtime.js` defaults to disabled, accepts only the branded SQL adapter, checks its persisted scope, and composes authentication, profile authorization, provider and service. Mock/offline-test uses only the distinct TEST scope and cannot consume CNY/USD approvals. TEST units are not actual money. The adapter brand prevents accidental plain-object substitution; the trusted binding and actual schema must still be verified at deployment.
+
+`server/sites-auth.js` is Sites-specific: it reads only the stable authenticated-user ID after an injected platform-boundary check. It does not read/store email or name, implement a second OAuth stack, or accept a bypass token as visitor identity. The boundary callback is NOT a new proof of authentication by itself. A deployment must route requests exclusively through Sites trusted dispatch, ensure identity headers cannot be supplied directly by the client, and test that boundary. Do not expose a raw Worker/Node endpoint and set the callback to always true. HTTP origin/custom-header checks are CSRF defense in depth, not session authentication.
+
+Authentication precedes request-body parsing. `server/request-body.js` enforces 1024 bytes, fatal UTF-8/JSON parsing, a configurable 1–10000ms read deadline (default 2000ms), and cancellation. Timeout/late data cannot reach the ledger or provider; cancellation cleanup is not allowed to hang the handler.
 
 ## Remaining steps before any real use
 
 1. Select and authorize an HTTPS server deployment; static Sites does not run these modules. Bundle only public frontend files into the Site, never server configuration or keys.
-2. Implement and verify platform authentication, secure session cookies, ownership authorization, persistent transactional ledger, rate limiting, body/read timeouts, restricted egress and redacted operational monitoring. Test multiple workers, restarts, settlement failures and reconciliation.
+2. Wire and verify the Sites trusted ingress adapter and D1 binding; apply the reviewed migration through the platform migration workflow, then provision only an authorized owner/approval scope. Confirm genuine D1 transactional behavior, ownership isolation, rate limits, restarts, settlement failures and reconciliation. Add restricted egress and redacted operational monitoring. Do not treat local SQLite tests as proof of deployed access control.
 3. Obtain a specific currency/total budget and synthetic-only test authorization; verify current provider terms, model and pricing. Add the credential via the deployment platform's secret manager, not chat or browser code.
 4. Run controlled synthetic staging checks with no child information, measure actual token accounting and response schema, and verify provider-side caps. Production connectivity has NOT been tested here.
 5. Only later, obtain explicit consent for precisely which child text/audio/data would go to which service, retention and cost. That is outside this scope. DeepSeek text completions do not themselves provide microphone recognition or audio output.
@@ -64,3 +72,7 @@ The current docs list `deepseek-flash` and `deepseek-v4-pro`, with thinking enab
 ## Offline validation
 
 Run `node --test tests/deepseek.test.js` or `npm test`. Tests inject only deterministic fake network responses, use synthetic keys and never call DeepSeek. Coverage includes 36 frontend/server fixture pairs; fixed protocol; error, truncation and wrong-answer rejection; timeout and abort; strict payload/identity/CSRF boundaries; cached success/error validation; duplicate/concurrent reservations; conservative charging; settlement ambiguity; pricing expiry/minimum reservation and scope freezing. These are automated Node tests, not deployment or real-device evidence.
+
+## Persistent-store documentation
+
+The D1 adapter uses prepared bindings and `batch()` for ordered transactional statements; it does not issue manual BEGIN/COMMIT to D1. The test-only SQLite binding uses explicit local transactions to exercise the same SQL. Reference: https://developers.cloudflare.com/d1/worker-api/d1-database/#batch .
