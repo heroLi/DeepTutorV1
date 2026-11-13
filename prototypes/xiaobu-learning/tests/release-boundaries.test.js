@@ -29,3 +29,13 @@ test('local secret and database patterns remain ignored without hiding hosting s
  for(const pattern of ['.env','.env.*','.dev.vars','.dev.vars.*','*.sqlite','*.sqlite-*','*.db','*.db-*','runtime-data/','node_modules/'])assert.ok(ignore.includes(pattern),pattern);
  assert.equal(ignore.includes('.openai/'),false);
 });
+
+test('optional D1 probe remains local-only and separate from ordinary test execution',()=>{
+ const runner=readFileSync(join(root,'dev/d1-readiness/verify.mjs'),'utf8');
+ const fixture=readFileSync(join(root,'dev/d1-readiness/worker.mjs'),'utf8');
+ assert.match(runner,/'--local'/);assert.doesNotMatch(runner,/['"]--remote['"]|\.\.\.process\.env|process\.env\.(?:CLOUDFLARE|CF_)/);
+ assert.match(runner,/WRANGLER_SEND_METRICS:'false'/);assert.match(runner,/CLOUDFLARE_CF_FETCH_ENABLED:'false'/);
+ assert.match(fixture,/mode:'offline-test'/);assert.match(fixture,/env\.FIXTURE_PROVIDER\.fetch/);assert.doesNotMatch(fixture,/globalThis\.fetch|process\.env/);
+ const pkg=JSON.parse(readFileSync(join(root,'package.json'),'utf8'));assert.equal(pkg.scripts.test,'node --test tests/*.test.js');
+ assert.ok(readFileSync(join(root,'.gitignore'),'utf8').split(/\r?\n/).includes('dev/d1-readiness/evidence/'));
+});

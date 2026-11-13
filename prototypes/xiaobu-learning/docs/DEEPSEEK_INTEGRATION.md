@@ -10,7 +10,7 @@ The first integration scope is intentionally only nine authored synthetic questi
 
 `server/deepseek.js` exports `createDeepSeekProvider`. Default mode is `disabled`. Tests explicitly inject a fake fetch and synthetic credential under `offline-test`. There is no environment-variable lookup, default global fetch, SDK, automatic retry or implicit startup.
 
-The fixed endpoint is `https://api.deepseek.com/chat/completions`; redirects are errors. Current allowed model is only `deepseek-flash`. Payload explicitly disables thinking, sets `stream:false`, `max_tokens:384`, and JSON object output. No tool calls are supported. A model change requires reviewed code/configuration, fresh official documentation and fresh pricing.
+The fixed endpoint is `https://api.deepseek.com/chat/completions`; transport uses `redirect: "manual"` for Worker compatibility and rejects every non-200 response without following Location. Already redirected or nonempty unexpected final response URLs are rejected; rejected and late response bodies are cancelled. The browser-facing client retains its separate `redirect: "error"` policy. Current allowed model is only `deepseek-flash`. Payload explicitly disables thinking, sets `stream:false`, `max_tokens:384`, and JSON object output. No tool calls are supported. A model change requires reviewed code/configuration, fresh official documentation and fresh pricing.
 
 `server/service.js` exports `createTutorService`, whose `.fetch(Request)` handles only same-origin POST `/api/tutor/dialogue`, with JSON content type, exact Origin and `x-xiaobu-request: 1`. Requests are at most 1024 bytes and exactly:
 

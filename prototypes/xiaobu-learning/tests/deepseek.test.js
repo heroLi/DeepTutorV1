@@ -39,7 +39,7 @@ test('nine authored questions and four intents are bounded; arithmetic answers r
  assert.throws(()=>dialogueFixture({questionId:'loop:math:99',intent:'check'}),{code:'INVALID_REQUEST'});
 });
 test('fixed endpoint and explicit HTTP parameters; no identity or free text reaches provider',async()=>{
- let calls=0;const p=provider(async(url,options)=>{calls++;assert.equal(url,DEEPSEEK_ENDPOINT);assert.equal(options.redirect,'error');assert.equal(options.credentials,'omit');assert.equal(options.headers.authorization,'Bearer synthetic-test-key');const b=JSON.parse(options.body);assert.deepEqual(b.thinking,{type:'disabled'});assert.equal(b.max_tokens,MAX_COMPLETION_TOKENS);assert.equal(b.stream,false);assert.deepEqual(b.response_format,{type:'json_object'});assert.equal(b.tools,undefined);assert.equal(b.messages.length,2);assert.deepEqual(JSON.parse(b.messages[1].content),modelInstruction(query));return reply();});
+ let calls=0;const p=provider(async(url,options)=>{calls++;assert.equal(url,DEEPSEEK_ENDPOINT);assert.equal(options.redirect,'manual');assert.equal(options.credentials,'omit');assert.equal(options.headers.authorization,'Bearer synthetic-test-key');const b=JSON.parse(options.body);assert.deepEqual(b.thinking,{type:'disabled'});assert.equal(b.max_tokens,MAX_COMPLETION_TOKENS);assert.equal(b.stream,false);assert.deepEqual(b.response_format,{type:'json_object'});assert.equal(b.tools,undefined);assert.equal(b.messages.length,2);assert.deepEqual(JSON.parse(b.messages[1].content),modelInstruction(query));return reply();});
  const result=await p.request(query);assert.equal(result.mode,'protocol-test');assert.equal(result.answer,'4');assert.equal(calls,1);
 });
 test('live construction requires explicit approval, credential and trusted integration dependencies',()=>{
@@ -140,4 +140,24 @@ test('usage beyond conservative token bound freezes live approval scope and keep
  const live=provider(async()=>reply(wire(undefined,{usage:{prompt_tokens:99999,completion_tokens:1}})),{mode:'live',approval,integration,pricing,now:()=>Date.parse('2026-11-13T12:00:00Z')});
  const svc=createTutorService({mode:'live',origin:'https://fixture.test',...integration,provider:live,reservationMicros:12000,approval});
  assert.equal((await svc.fetch(request())).status,502);assert.equal(frozen,approval.reference);assert.deepEqual(JSON.parse(seenKey),[approval.reference,'fixture-user','one']);assert.equal(base.stats.spent,12000);
+});
+
+test('manual provider transport never follows Location or accepts an already redirected endpoint',async()=>{
+ for(const [status,props] of [[301,{}],[302,{}],[303,{}],[307,{}],[308,{}],[200,{redirected:true,url:DEEPSEEK_ENDPOINT}],[200,{url:'https://unexpected.example.test/answer'}]]){
+  let calls=0,reads=0,cancelled=0;
+  const p=provider(async(url,options)=>{
+   calls++;assert.equal(url,DEEPSEEK_ENDPOINT);assert.equal(options.redirect,'manual');
+   const response=new Response(new ReadableStream({pull(){reads++;},cancel(){cancelled++;}},{highWaterMark:0}),{status,headers:{'content-type':'application/json',location:'https://unexpected.example.test/do-not-follow'}});
+   for(const [key,value] of Object.entries(props))Object.defineProperty(response,key,{value});
+   return response;
+  });
+  await assert.rejects(p.request(query),{code:'PROVIDER_UNAVAILABLE'});
+  assert.equal(calls,1);assert.equal(reads,0);assert.equal(cancelled,1);
+ }
+});
+test('provider response arriving after timeout is cancelled without reading its body',async()=>{
+ let release,reads=0,cancelled=0;const pending=provider(()=>new Promise(resolve=>{release=resolve;}),{timeoutMs:5}).request(query);
+ await assert.rejects(pending,{code:'TIMEOUT'});
+ release(new Response(new ReadableStream({pull(){reads++;},cancel(){cancelled++;}},{highWaterMark:0}),{headers:{'content-type':'application/json'}}));
+ await new Promise(resolve=>setImmediate(resolve));assert.equal(reads,0);assert.equal(cancelled,1);
 });

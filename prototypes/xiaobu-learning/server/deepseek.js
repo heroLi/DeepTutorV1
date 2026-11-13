@@ -7,6 +7,8 @@ export const MAX_COMPLETION_TOKENS = OUTPUT_TOKEN_BOUND;
 const MAX_RESPONSE_BYTES = 16384;
 const liveBindings = new WeakMap();
 const safeInt = value => Number.isSafeInteger(value) && value > 0;
+// Never wait on cancellation of a rejected or late provider body.
+const cancelResponse = response => { try { Promise.resolve(response?.body?.cancel()).catch(() => {}); } catch {} };
 export function requireLiveApproval(approval) {
   if (!approval || approval.provider !== 'deepseek' || approval.syntheticOnly !== true || !['CNY','USD'].includes(approval.currency) ||
       !safeInt(approval.spendLimitMicros) || typeof approval.reference !== 'string' || !approval.reference.trim() || approval.reference.length > 100) throw fault('LIVE_NOT_AUTHORIZED');
@@ -62,9 +64,14 @@ export function createDeepSeekProvider({mode = 'disabled', fetchImpl, credential
       timer = setTimeout(() => { controller.abort(); reject(fault('TIMEOUT')); }, timeoutMs);
     });
     const operation = async () => {
-      const response = await fetchImpl(DEEPSEEK_ENDPOINT, {method:'POST', redirect:'error', credentials:'omit',
+      let response;
+      try {
+      // Workers supports manual, not error. Do not follow any Location response.
+      response = await fetchImpl(DEEPSEEK_ENDPOINT, {method:'POST', redirect:'manual', credentials:'omit',
         headers:{'content-type':'application/json','authorization':`Bearer ${credential}`}, body:payload, signal:controller.signal});
-      if (!response || response.status !== 200) throw fault('PROVIDER_UNAVAILABLE');
+      if (controller.signal.aborted) throw fault('CANCELLED');
+      if (!response || response.status !== 200 || response.redirected === true ||
+          (response.url && response.url !== DEEPSEEK_ENDPOINT)) throw fault('PROVIDER_UNAVAILABLE');
       if (!/^application\/json(?:\s*;|$)/i.test(response.headers.get('content-type') || '')) throw fault('INVALID_RESPONSE');
       const data = await readLimitedJson(response, MAX_RESPONSE_BYTES, controller.signal);
       if (!data || data.model !== model || !Array.isArray(data.choices) || data.choices.length !== 1) throw fault('INVALID_RESPONSE');
@@ -76,6 +83,7 @@ export function createDeepSeekProvider({mode = 'disabled', fetchImpl, credential
           typeof message.content !== 'string' || !message.content.trim() || message.content.length > 2048) throw fault('INVALID_RESPONSE');
       let parsed; try { parsed = JSON.parse(message.content); } catch { throw fault('INVALID_RESPONSE'); }
       return Object.freeze({mode: mode === 'live' ? 'deepseek' : 'protocol-test', ...validateDialogue(parsed, query)});
+      } finally { cancelResponse(response); }
     };
     try { return await Promise.race([operation(), stop]); }
     catch (error) {

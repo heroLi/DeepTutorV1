@@ -1,0 +1,142 @@
+{
+  "localOnly": true,
+  "identity": "fixed-synthetic-fixture-not-production-auth",
+  "mode": "offline-test",
+  "currency": "TEST",
+  "checks": [
+    "schema-only migration applied by official local CLI",
+    "operator-only initialization using actual D1 binding",
+    "status reads actual D1 without mutating domain tables",
+    "D1 scope owner isolation",
+    "workerd manual redirect rejected without following; failure replay does not retry",
+    "dialogue and idempotent replay with persisted 100 TEST charge",
+    "synthetic profiles A/B authorized independently",
+    "real D1 atomic concurrent reservations and duplicate pending guard",
+    "D1 batch rolls back earlier insert when immutable-scope trigger aborts",
+    "workerd restart retains D1 charge and cached response",
+    "D1 total budget cap and HTTP status agree",
+    "freeze stops requests without provider call",
+    "cold frozen runtime retains read-only diagnostics"
+  ],
+  "migration": "official wrangler d1 execute --local: 12 statements",
+  "schemaObjects": [
+    {
+      "name": "tutor_claim_charge",
+      "type": "trigger"
+    },
+    {
+      "name": "tutor_claim_guard",
+      "type": "trigger"
+    },
+    {
+      "name": "tutor_claim_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "tutor_claim_inflight",
+      "type": "index"
+    },
+    {
+      "name": "tutor_claim_no_delete",
+      "type": "trigger"
+    },
+    {
+      "name": "tutor_claim_reserve",
+      "type": "trigger"
+    },
+    {
+      "name": "tutor_claim_scope_time",
+      "type": "index"
+    },
+    {
+      "name": "tutor_claims",
+      "type": "table"
+    },
+    {
+      "name": "tutor_profiles",
+      "type": "table"
+    },
+    {
+      "name": "tutor_scope_immutable",
+      "type": "trigger"
+    },
+    {
+      "name": "tutor_scope_no_delete",
+      "type": "trigger"
+    },
+    {
+      "name": "tutor_scopes",
+      "type": "table"
+    }
+  ],
+  "outboundAttempts": 0,
+  "providerCalls": 10,
+  "passed": true,
+  "transportCompatibility": "revised core uses redirect:manual and rejects redirects/final URL changes; probe preserves URL/init into explicit local service binding",
+  "cliIsolation": {
+    "privateHome": true,
+    "minimalEnvironment": true,
+    "metrics": false,
+    "cloudMetadataLookup": false
+  },
+  "sourceInput": "explicit repository source path; exact file content hashes below",
+  "coreRevision": {
+    "path": "server/deepseek.js",
+    "state": "exact-source-bytes-used-by-this-local-run",
+    "sha256": "847d3f4a3a6431a4427cfcd1ff0dd7f691062657687d5d2e8c815f37a96318cb"
+  },
+  "versions": {
+    "miniflare": "4.20260515.0",
+    "wrangler": "4.92.0"
+  },
+  "sourceFiles": [
+    {
+      "path": "worker.mjs",
+      "sha256": "966b8f72e549ae3ee2801c5c5109f4db7e5a84b4d1f58ca0222c97e6b10e8065"
+    },
+    {
+      "path": "server/catalogue.js",
+      "sha256": "6469315327d643ce2e5d468f946ad12f82e1a7f42dd69703b33cd8ae44591dcd"
+    },
+    {
+      "path": "server/d1-ledger.js",
+      "sha256": "7a96a3a6c125ac593aa45f1d7209861ff35cca4c5e7970b9f526fbaabd743a13"
+    },
+    {
+      "path": "server/deepseek.js",
+      "sha256": "847d3f4a3a6431a4427cfcd1ff0dd7f691062657687d5d2e8c815f37a96318cb"
+    },
+    {
+      "path": "server/learning-media.js",
+      "sha256": "3a46d8bdc2a79b2f685453c385a247b1ef88f0ec285ec242e5d235868e3cbe8c"
+    },
+    {
+      "path": "server/pricing.js",
+      "sha256": "b24789adb5590cd74aaff262836810040534881a148045b0eae2a2ababe8703f"
+    },
+    {
+      "path": "server/request-body.js",
+      "sha256": "4f53de5cb0b3cc4e2bbe470b86a16a52fd976ed999ec5fabb1f1e7324f9739b3"
+    },
+    {
+      "path": "server/runtime.js",
+      "sha256": "1064a7ceb08e1689ce033a4434b8eb70cdcb63cfdc73c8c9d9a7ee76d46234c2"
+    },
+    {
+      "path": "server/service.js",
+      "sha256": "95c746a523bdd5213fd867c92e6ab2a86b6217e6639630a2797d171bd67404a3"
+    },
+    {
+      "path": "server/sites-auth.js",
+      "sha256": "c9fef92a47f8776f12c9a4fc7200d0f97a5e6b62652e5feb7810694c592b8db8"
+    },
+    {
+      "path": "server/status.js",
+      "sha256": "ef4f9353aaaaef82f7353388082f48acd9d41142819378fc1d03e18f30880cb2"
+    },
+    {
+      "path": "dist/loop-model.js",
+      "sha256": "856f29cdda6e406139bc2f08e9c3f94b607dd36cca1ca24f286c156d61923cc9"
+    }
+  ]
+}

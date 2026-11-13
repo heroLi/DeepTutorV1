@@ -1,3 +1,16 @@
+# Actual local D1/workerd verification — 2026-11-13
+
+- 186/186 ordinary Node tests passed after the Worker transport fix and optional-harness release guard. Independent provider review passed, including a rejected response whose body cancellation never settles.
+- Fixed a real workerd incompatibility: provider transport now uses manual redirects, accepts only the fixed endpoint's unredirected 200, never follows Location, and cancels rejected or late bodies without blocking. Browser-client redirect policy remains unchanged.
+- The portable optional dev/d1-readiness harness was executed from this checkout against the official installed Miniflare/Wrangler toolchain. Original schema applied with official --local CLI (12 commands); 13 protocol/persistence groups passed using the genuine local D1 binding, not our Node SQLite-shaped helper.
+- Actual D1 covered operator-only initialization, non-mutating status, owner/profile authorization, refusal/cache of 302, correct finite dialogue, idempotency, two-way pending concurrency, rollback of an earlier batch insert after a trigger failure, restart persistence, total budget, freeze and cold-frozen diagnostics.
+- The provider core SHA is 847d3f4a3a6431a4427cfcd1ff0dd7f691062657687d5d2e8c815f37a96318cb. No error-to-manual compatibility wrapper remains: the fixture forwards its URL/init unchanged into a named local service binding. Ten fake-provider calls, zero external outbound attempts.
+- The CLI child uses private HOME/XDG/TMP and a minimal explicit environment; no inherited cloud credentials/proxies, metrics or metadata fetch. Only an owned temporary database is created/removed. Hard termination may leave synthetic temporary state; logs/evidence are ignored and the committed summary has no machine paths.
+- Ordinary npm test does not run this optional workerd suite or install its dependencies. The exact local tool versions, commands, restrictions and reviewed result are in dev/d1-readiness/README.md and docs/d1-workerd-evidence.json.
+- This is not production Sites ingress, cloud D1 provisioning, billing approval, distributed deployment, physical-device playback or real model verification. The private static Site remains v6, with unchanged manifest, media and sharing; no real child data, key or model spending.
+
+---
+
 # Local Worker/media migration verification — 2026-11-13
 
 - 183/183 Node tests passed, including 5 portable media groups. Existing frontend, API, client, ledger and real-loopback tests remain green. Syntax and whitespace checks passed.

@@ -1,0 +1,7 @@
+{
+ "name":"xiaobu-local-d1-readiness",
+ "main":"worker.mjs",
+ "compatibility_date":"2026-05-15",
+ "compatibility_flags":["nodejs_compat"],
+ "d1_databases":[{"binding":"DB","database_name":"xiaobu-local-only","database_id":"local-only-xiaobu-d1"}]
+}
