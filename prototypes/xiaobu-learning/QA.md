@@ -1,3 +1,17 @@
+# Source-only API client verification — 2026-11-13
+
+- 171/171 Node tests passed, including 12 client/SQLite integration cases and 3 release-boundary checks. Independent review, syntax and whitespace checks passed. No shipped frontend or hosting change.
+- All 36 fixed question/intent outputs match the frontend/server canonical fixtures. Explicit expected-mode validation prevents silently accepting mock output as DeepSeek. Disabled clients make no request and status never enables them automatically.
+- The real SQLite + fake provider bridge verifies read-only status, conservative charging, duplicate caching, budget/owner/profile rejection and cold-start stop diagnostics. It simulates browser same-origin metadata and trusted ingress; no real HTTP/browser/platform connectivity is implied.
+- Input extras/accessors, arbitrary text/audio/history and URL/key overrides are rejected. Only fixed relative endpoints and same-origin credentials are used; no client-supplied Origin, identity header, provider credential or direct provider URL is sent.
+- BUSY preserves an existing request; explicit cancel/scope change/dispose rejects late results. Total timeout includes stalled headers/body and uncooperative abort. Cancellation does not undo persisted server work or promise a refund.
+- Review caught an in-flight mutable-input correlation issue; immutable request ID/intent snapshots now protect request bodies, expected replies and returned context. Self-consistent status values above server 1e12 bounds are rejected.
+- JSON/UTF-8/envelope/mode/answer/byte-limit errors fail closed, with no automatic retry or local-model fallback. Client-side correlation is not represented as authenticated server echo.
+- `.gitignore` now excludes common local secret and database artifacts. Three regression checks guard static/server source boundaries and schema-only migrations. They detect selected obvious patterns, not every possible secret.
+- No child text/recording, real credential, paid model call, D1 provisioning or sharing change. Client source is deliberately outside `dist`; the hosted Site remains its existing local simulation.
+
+---
+
 # Read-only API status verification — 2026-11-13
 
 - 156/156 Node tests passed, including 9 ledger-status and 12 HTTP-status cases. All source/test JavaScript syntax and whitespace checks passed. Frontend, media, migration and hosting configuration are unchanged.

@@ -32,6 +32,9 @@ A private, buildless static learning preview for 小步讲题 / DeepTutorV1.
 ## Undeployed DeepSeek adapter
 `server/` adds an HTTP protocol adapter and a default-disabled runtime, Sites-specific identity adaptation, owner/profile authorization, a D1-compatible SQL ledger, atomic budget reservations, request-rate/inflight limits, and bounded incoming-body reads. An authenticated read-only status route explains conservative quota, rate/inflight and operational stop conditions without invoking a model or exposing identities; diagnostic cold starts do not reopen POST. Local tests run real SQLite files, independent worker-thread connections and fake provider responses; no paid call is made. The static Site does not run or call this backend. The SQL migration and platform ingress adapter have NOT been deployed or verified on hosted D1/Sites. Live use still requires reviewed deployment wiring, a safely provisioned approval scope, specific spending authorization, current pricing and a server-side secret manager. See `docs/DEEPSEEK_INTEGRATION.md`. Supplying a key alone is not sufficient.
 
+## Source-only browser API client
+`client/tutor-client.js` prepares a disabled-by-default, same-origin transport with explicit expected mode, finite inputs and exact authored response checks. It has bounded reads, no retries or automatic fallback, and isolates cancellation/late results and mutated caller objects. It is not imported by the hosted page and never receives free-form text or recordings. See `docs/CLIENT_TRANSPORT.md`. Common local secrets/databases are ignored, with narrow release-boundary regression tests; these do not replace a production security review.
+
 ## Verify and render
 Tests require Node 22.13+ for the built-in SQLite test adapter (current local validation uses Node 24). `npm test`, `node --check dist/app.js`, `node --check dist/model.js` and supported Sites browser preview. No dependency installation/build needed.
 

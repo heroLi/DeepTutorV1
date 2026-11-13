@@ -1,0 +1,20 @@
+# Local dependencies, development bindings and runtime data are never source.
+node_modules/
+.wrangler/
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+*.log
+runtime-data/
+local-data/
+secrets/
+
+# Keep the tracked Sites hosting manifest. It contains no credentials.
