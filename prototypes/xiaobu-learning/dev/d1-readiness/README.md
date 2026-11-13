@@ -31,7 +31,7 @@ Provider requests go through an explicit local service binding, never global fet
 
 ## Core compatibility requirement
 
-The probe found that workerd rejects `redirect:error`. The verified reviewed provider-core revision now uses `manual`, rejects non-200/redirected/final-URL-mismatched responses, and cancels refused/late bodies. The harness does not hide this difference with a redirect conversion wrapper. Evidence records the exact core file hash; the tested revision is `847d3f4a3a6431a4427cfcd1ff0dd7f691062657687d5d2e8c815f37a96318cb`.
+The probe found that workerd rejects `redirect:error`. The verified reviewed provider-core revision now uses `manual`, rejects non-200/redirected/final-URL-mismatched responses, and cancels refused/late bodies. The harness does not hide this difference with a redirect conversion wrapper. Evidence records the exact core file hash; the tested revision is `966ddf3e66b858716323ff3e0e1756c665907992de9d08bd76aaa754170b509c`.
 
 ## Verified assertions
 

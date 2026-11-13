@@ -1,3 +1,18 @@
+# Undeployed client/provider response cleanup — 2026-11-13
+
+## Reproduced defects and minimal repair
+- Pure synthetic reproduction showed a cancelled client's late response was discarded but its body received zero cancellation calls. Early response-header rejection similarly omitted body cleanup. No result from that response reached another profile; this was a resource-cleanup defect, not a demonstrated ownership or budget bypass.
+- An oversized provider stream whose underlying cancel promise never settled left `readLimitedJson` waiting in its `finally` block with the reader locked. The outer provider eventually timed out instead of immediately reporting the original size error.
+- Each client operation now owns an idempotent non-waiting cleanup shared by its inner operation and outer cancellation race. Late/early-rejected unread bodies are closed; acquired readers are cancelled and released. An old operation cannot clear a newer operation's busy guard or cancel its response. Provider-body cleanup also no longer waits, and abort interrupts a suspended read while releasing its lock. Cancellation exceptions cannot replace the original result/error. No automatic retry, provider fallback, budget change or claim refund was introduced.
+
+## Verification and limits
+- 348/348 Node tests passed, including 17 new client cleanup and 6 new provider cleanup groups. Covered late cancellation/timeout/disposal/scope change, early header/redirect/length rejection, hanging/rejected/thrown cancellation, active read interruption, reader release, parser/success outcomes and subsequent-request isolation. Independent review, syntax and diff checks passed.
+- The full actual local D1/workerd baseline (13 groups, 10 fake-provider calls) and all three interrupted-acknowledgment cases (29 fake-provider calls) passed again with the updated provider. Both retained zero Worker outbound attempts. Path-free evidence/source hashes were refreshed.
+- A separate isolated local Miniflare/workerd probe imported the exact provider source and exercised oversized body, explicit abort and timeout while cancellation never settled. Results were respectively `RESPONSE_TOO_LARGE`, `CANCELLED`, `TIMEOUT`; each had one underlying cancel call and an unlocked body. Zero Worker outbound attempts. Its path-free three-case result is `docs/stream-cleanup-workerd-evidence.json`. This focused ephemeral probe is not an additional CI job or a deployed test endpoint.
+- These client/server modules remain outside the shipped static assets. No UI, production endpoint, hosting resource, owner-private sharing, learner history, real provider call, credential or fee was changed. The Site remains version 12. Browser/device QA was not rerun for this source-only fix; real provider cancellation, cloud ingress and billing behavior remain unverified and must not be inferred from these tests.
+
+---
+
 # Undeployed API interrupted-acknowledgment reliability — 2026-11-13
 
 - 325/325 dependency-free Node tests passed: all 317 prior tests plus 8 development-only fault-injector groups. These cover default pass-through, exact ordered SQL targeting, one-shot before/after injection, concurrent matching batches and unchanged native exceptions. Syntax and diff checks passed.

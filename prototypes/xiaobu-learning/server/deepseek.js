@@ -14,14 +14,28 @@ export function requireLiveApproval(approval) {
       !safeInt(approval.spendLimitMicros) || typeof approval.reference !== 'string' || !approval.reference.trim() || approval.reference.length > 100) throw fault('LIVE_NOT_AUTHORIZED');
 }
 export async function readLimitedJson(response, maxBytes, signal) {
-  const length = response.headers.get('content-length');
-  if (length !== null && (!/^\d+$/.test(length) || Number(length) > maxBytes)) throw fault('RESPONSE_TOO_LARGE');
-  if (!response.body?.getReader) throw fault('INVALID_RESPONSE');
-  const reader = response.body.getReader(); let total = 0; const chunks = [];
+  let reader, cleaned=false;
+  const cleanup=()=>{
+    if(cleaned)return;cleaned=true;
+    // A stream's cancel promise can hang or reject. Cleanup must not replace
+    // the original validation error, block a timeout, or keep a reader lock.
+    if(reader){try{Promise.resolve(reader.cancel()).catch(()=>{});}catch{}try{reader.releaseLock();}catch{}}
+    else cancelResponse(response);
+  };
+  const abort=()=>cleanup();
   try {
+    if(signal?.aborted)throw fault('CANCELLED');
+    const length = response.headers.get('content-length');
+    if (length !== null && (!/^\d+$/.test(length) || Number(length) > maxBytes)) throw fault('RESPONSE_TOO_LARGE');
+    if (!response.body?.getReader) throw fault('INVALID_RESPONSE');
+    reader = response.body.getReader();
+    signal?.addEventListener('abort',abort,{once:true});
+    let total = 0; const chunks = [];
     while (true) {
       if (signal?.aborted) throw fault('CANCELLED');
-      const {value, done} = await reader.read(); if (done) break;
+      const {value, done} = await reader.read();
+      if (signal?.aborted) throw fault('CANCELLED');
+      if (done) break;
       total += value.byteLength;
       if (total > maxBytes) throw fault('RESPONSE_TOO_LARGE');
       chunks.push(value);
@@ -30,8 +44,9 @@ export async function readLimitedJson(response, maxBytes, signal) {
     for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
     try { return JSON.parse(new TextDecoder('utf-8', {fatal:true}).decode(bytes)); }
     catch { throw fault('INVALID_RESPONSE'); }
-  } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
+  } finally { signal?.removeEventListener('abort',abort); cleanup(); }
 }
+
 export function createDeepSeekProvider({mode = 'disabled', fetchImpl, credential, approval,
   model = DEEPSEEK_MODEL, timeoutMs = 15000, integration, pricing, now = () => Date.now()} = {}) {
   if (mode === 'disabled') return Object.freeze({mode, async request() { throw fault('LIVE_DISABLED'); }});

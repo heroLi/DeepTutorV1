@@ -35,16 +35,23 @@ export function createTutorClient(options={}){
   if(signal!==undefined&&!(signal instanceof AbortSignal))throw fail('INVALID_REQUEST');if(signal?.aborted)throw fail('CANCELLED');
   if(kind==='dialogue'&&(!exact(input,['requestId','intent'])||typeof input.requestId!=='string'||!KEY.test(input.requestId)||!INTENTS.includes(input.intent)))throw fail('INVALID_REQUEST');
   const action=kind==='dialogue'?Object.freeze({requestId:input.requestId,intent:input.intent}):null;
-  const captured={...scope},generation=epoch,controller=new AbortController();let reject,timer,reader;
+  const captured={...scope},generation=epoch,controller=new AbortController();let reject,timer,reader,response,bodyCleaned=false;
+  // Per-operation ownership also covers fetches that resolve after the outer
+  // cancellation race has already finished. Never await untrusted cancel hooks.
+  const cleanupBody=()=>{
+   if(bodyCleaned)return;
+   if(reader){bodyCleaned=true;try{Promise.resolve(reader.cancel()).catch(()=>{});}catch{}finally{try{reader.releaseLock();}catch{}}}
+   else if(response instanceof Response&&response.body&&!response.body.locked){bodyCleaned=true;try{Promise.resolve(response.body.cancel()).catch(()=>{});}catch{}}
+  };
   const interrupted=new Promise((_,r)=>{reject=r;});const op={controller,reject,reason:null};active=op;
   const abort=()=>{op.reason='CANCELLED';controller.abort();reject(fail('CANCELLED'));};signal?.addEventListener('abort',abort,{once:true});
   timer=setTimeout(()=>{op.reason='TIMEOUT';controller.abort();reject(fail('TIMEOUT'));},timeoutMs);
   const check=()=>{if(op.reason||epoch!==generation||disposed||controller.signal.aborted)throw fail(op.reason||'CANCELLED');};
   try{
-   const work=(async()=>{
+   const work=(async()=>{try{
     const init={method:kind==='status'?'GET':'POST',credentials:'same-origin',redirect:'error',mode:'same-origin',cache:'no-store',headers:{'x-xiaobu-request':'1'},signal:controller.signal};
     if(kind==='dialogue'){init.headers['content-type']='application/json';init.body=JSON.stringify({requestId:action.requestId,...captured,intent:action.intent});}
-    const response=await fetchImpl('/api/tutor/'+kind,init);check();
+    response=await fetchImpl('/api/tutor/'+kind,init);check();
     if(!(response instanceof Response)||response.redirected||!/^application\/json(?:\s*;|$)/i.test(response.headers.get('content-type')||''))throw fail('INVALID_RESPONSE');
     const length=response.headers.get('content-length');if(length!==null&&(!/^\d+$/.test(length)||Number(length)>16384))throw fail('RESPONSE_TOO_LARGE');
     if(!response.body)throw fail('INVALID_RESPONSE');reader=response.body.getReader();const decoder=new TextDecoder('utf-8',{fatal:true});let size=0,text='';
@@ -56,10 +63,10 @@ export function createTutorClient(options={}){
     if(kind==='status'){if(!statusValid(value,expectedMode))throw fail('INVALID_RESPONSE');}
     else {const expected={...localDialogueTransport({questionId:captured.questionId,intent:action.intent}),mode:MODES[expectedMode]};if(!exact(value,Object.keys(expected))||Object.keys(expected).some(k=>expected[k]!==value[k]))throw fail('INVALID_RESPONSE');}
     check();return freeze(kind==='status'?{status:value,scope:captured}:{requestId:action.requestId,profileId:captured.profileId,result:value});
-   })();
+   }finally{cleanupBody();}})();
    return await Promise.race([work,interrupted]);
   }catch(error){if(op.reason)throw fail(op.reason);if(errors.includes(error?.code)||['INVALID_RESPONSE','RESPONSE_TOO_LARGE'].includes(error?.code))throw fail(error.code);throw fail('TRANSPORT_UNAVAILABLE');}
-  finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);controller.abort();if(reader){try{Promise.resolve(reader.cancel()).catch(()=>{});}catch{}}if(active===op)active=null;}
+  finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);controller.abort();cleanupBody();if(active===op)active=null;}
  }
  function optionsSignal(value){if(!exact(value,[])&&!exact(value,['signal']))throw fail('INVALID_REQUEST');return value.signal;}
  return Object.freeze({setScope(value){if(disposed)throw fail('DISPOSED');if(!exact(value,['profileId','questionId'])||!['A','B'].includes(value.profileId)||!question(value.questionId))throw fail('INVALID_REQUEST');if(!scope||scope.profileId!==value.profileId||scope.questionId!==value.questionId){cancel();scope={...value};}},async getStatus(options={}){return run('status',undefined,optionsSignal(options));},async dialogue(input,options={}){return run('dialogue',input,optionsSignal(options));},cancel,dispose(){cancel();scope=null;disposed=true;}});

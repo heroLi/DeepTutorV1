@@ -1,0 +1,26 @@
+{
+  "localOnly": true,
+  "passed": true,
+  "outboundAttempts": 0,
+  "checks": [
+    {
+      "case": "oversize",
+      "code": "RESPONSE_TOO_LARGE",
+      "cancels": 1,
+      "locked": false
+    },
+    {
+      "case": "abort",
+      "code": "CANCELLED",
+      "cancels": 1,
+      "locked": false
+    },
+    {
+      "case": "timeout",
+      "code": "TIMEOUT",
+      "cancels": 1,
+      "locked": false
+    }
+  ],
+  "sourceSha256": "966ddf3e66b858716323ff3e0e1756c665907992de9d08bd76aaa754170b509c"
+}

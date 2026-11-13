@@ -83,7 +83,7 @@
   "coreRevision": {
     "path": "server/deepseek.js",
     "state": "exact-source-bytes-used-by-this-local-run",
-    "sha256": "847d3f4a3a6431a4427cfcd1ff0dd7f691062657687d5d2e8c815f37a96318cb"
+    "sha256": "966ddf3e66b858716323ff3e0e1756c665907992de9d08bd76aaa754170b509c"
   },
   "versions": {
     "miniflare": "4.20260515.0",
@@ -104,7 +104,7 @@
     },
     {
       "path": "server/deepseek.js",
-      "sha256": "847d3f4a3a6431a4427cfcd1ff0dd7f691062657687d5d2e8c815f37a96318cb"
+      "sha256": "966ddf3e66b858716323ff3e0e1756c665907992de9d08bd76aaa754170b509c"
     },
     {
       "path": "server/learning-media.js",

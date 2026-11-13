@@ -24,6 +24,8 @@ Success is `{ok:true,result:{mode,questionId,intent,text,followUp,answer}}`. Mod
 
 Responses have byte, UTF-8, JSON/schema and canonical-value validation. Empty content, non-stop finish reasons, unexpected model, tools, reasoning output, missing/out-of-bound usage and arithmetic mismatch fail closed. Timeouts cover both headers and response reading. Cancellation is propagated, but an upstream request can still incur cost; cancellation is not a refund.
 
+Response cleanup is non-blocking: size/schema rejection preserves its original error even if an underlying cancellation hook never settles, rejects or throws. Aborting a suspended provider-body read initiates cancellation and releases its reader lock. Late responses are cancelled without reading their contents. The optional client uses per-request cleanup ownership so an old response cannot cancel a newer request. A focused [local workerd stream probe](stream-cleanup-workerd-evidence.json) confirmed oversized-body, caller-abort and timeout outcomes against the current provider source, in addition to portable tests. This is not a real-provider cancellation/refund guarantee.
+
 ## Read-only API status
 
 `GET /api/tutor/status` is composed by the runtime and can also be built as a standalone `createTutorStatusHandler`. It uses the same trusted identity boundary and checks persisted scope ownership before exposing any quota. A supplied Origin must match exactly. Normal browser same-origin GET requests may omit Origin; in that case `Sec-Fetch-Site: same-origin` plus `x-xiaobu-request: 1` is required. Cross-site and missing-origin/missing-metadata requests are rejected. Browser code must not try to manufacture Origin or identity headers.

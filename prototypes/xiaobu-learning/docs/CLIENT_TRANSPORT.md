@@ -35,6 +35,8 @@ Responses must have the exact JSON envelope and finite contract. Dialogue text a
 
 Responses are capped at 16 KiB. The total timeout covers headers and body, with fatal UTF-8/JSON validation. There are no retries. A second request while one is pending returns BUSY without cancelling the first. Explicit cancellation, scope change or disposal aborts transport and discards late results. Validated action IDs/intents are immutable snapshots, so later caller mutation cannot relabel a response.
 
+Each request owns and closes its response body, including responses arriving after cancellation, timeout, disposal or a scope change. Early header/size/redirect rejection closes an unread body without acquiring a reader. Locked readers are cancelled without awaiting an uncooperative cancellation promise and their locks are released. Cleanup errors cannot replace the original outcome or clear another request's busy state.
+
 Cancellation and timeout do not prove the server did nothing and do not imply refunds. The server may already have reserved or conservatively charged the request. Retrying is a separate caller decision; the server's stable request-ID idempotency still applies. Returned request/profile correlation fields are client-side context, not a new server authentication claim.
 
 ## Verification and release boundary
