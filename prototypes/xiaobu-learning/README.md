@@ -35,6 +35,9 @@ A private, buildless static learning preview for 小步讲题 / DeepTutorV1.
 ## Source-only browser API client
 `client/tutor-client.js` prepares a disabled-by-default, same-origin transport with explicit expected mode, finite inputs and exact authored response checks. It has bounded reads, no retries or automatic fallback, and isolates cancellation/late results and mutated caller objects. It is not imported by the hosted page and never receives free-form text or recordings. See `docs/CLIENT_TRANSPORT.md`. Common local secrets/databases are ignored, with narrow release-boundary regression tests; these do not replace a production security review.
 
+## Runnable local HTTP fixture
+`npm run demo:api` starts a real HTTP simulation on `127.0.0.1` with an independent temporary SQLite database and a fake provider. It exposes the narrow status/dialogue routes using synthetic identity and TEST units only. This is not production authentication and cannot be reached remotely through the printed localhost URL. It reads no real keys and must not be tunneled or deployed. See `docs/LOCAL_API_DEMO.md` for requests, limits and cleanup.
+
 ## Verify and render
 Tests require Node 22.13+ for the built-in SQLite test adapter (current local validation uses Node 24). `npm test`, `node --check dist/app.js`, `node --check dist/model.js` and supported Sites browser preview. No dependency installation/build needed.
 

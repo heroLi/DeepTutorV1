@@ -1,3 +1,16 @@
+# Real loopback HTTP fixture verification — 2026-11-13
+
+- 178/178 Node tests passed, including 7 real loopback HTTP tests. Source/test syntax and whitespace checks passed. No extra dependencies, frontend changes, migrations or cloud deployment.
+- `npm run demo:api` was started and its actual status route returned 200, offline-test, TEST. Its origin is only usable on the machine running it. The development entry is a synthetic identity fixture, not production authentication.
+- The actual tutor client crosses a real local HTTP connection into the runtime, real temporary SQLite and a fake provider. The test bridge adds Node's missing browser metadata only after checking the client does not manufacture Origin/Fetch Metadata itself. Status, answer, same-ID cache and booked quota were verified.
+- Duplicate/in-flight HTTP overlap returns 409/429 as expected; two admitted calls finish with exactly two conservative charges. Ten unique attempts exhaust the fixture budget; duplicates do not call the provider again.
+- Host/Origin checks, forbidden bind/live/path options, fake identity-header override, personal-data-shaped extra fields, overlong/slow/late bodies, abort charging and malformed raw HTTP were exercised. Stream errors produce bounded failures instead of leaving sockets/readers hung.
+- The server binds only 127.0.0.1, has no real provider/credential configuration route, and removes only its own unique temporary directory on normal shutdown. Hard-kill leftovers are documented; no arbitrary existing path is deleted. No tunnel or public listener was created.
+- Independent read-only review covered the implementation and HTTP boundary; the overlap regression uses an explicit internal-fake completion gate rather than a timing window; shutdown waits for admitted handlers. This is not physical-device, browser-hosted API, Cloudflare D1 or real DeepSeek acceptance.
+- The hosted private Site remains version 6 with local dialogue. No secret lookup, cloud resource charge, actual child information or sharing change occurred.
+
+---
+
 # Source-only API client verification — 2026-11-13
 
 - 171/171 Node tests passed, including 12 client/SQLite integration cases and 3 release-boundary checks. Independent review, syntax and whitespace checks passed. No shipped frontend or hosting change.
