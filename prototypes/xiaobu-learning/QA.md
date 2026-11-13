@@ -1,3 +1,13 @@
+# Undeployed D1 daily-limit regression coverage — 2026-11-13
+
+- Read the official September 1, 2026 D1 free-tier enforcement notice and current D1 error reference. Independent inspection found no new data-protection defect: generic database failures already stop processing safely. No production, client or schema logic was changed and no special quota-recovery behavior was added.
+- Added 32 parameterized cases covering both row-read and row-write errors, in bare changelog and prefixed/extended forms. Cold-start readiness, profile authorization, reservation, settlement read/write, and status failure all sanitize to `LEDGER_UNAVAILABLE`; HTTP handlers return 503 without raw errors or invented quota snapshots.
+- Pre-provider failures leave the ledger unchanged and make zero fake-provider calls. Settlement failures after a successful fake-provider reply preserve the full pending reservation and never return success. Restoring queries and rebuilding the runtime leaves same-ID replay at `IN_PROGRESS`, with no repeat provider call or refund. Status failure after completed settlement preserves the cached result and exactly-once full charge. The opt-in client does not automatically resend or mutate its action input.
+- Full dependency-free suite: 380/380 passed, including all prior 348 cases. Targeted cases run against actual temporary SQLite persistence with injected official D1 errors and a fake provider. They do not exhaust a hosted Cloudflare allowance, prove geographic reachability, or measure any account's quota. No browser/device QA was needed because no shipped UI changed; API action-input preservation is not a claim about a future free-text draft UI.
+- Work was isolated in a source-only copy. No Sites source synchronization, version save, deployment, access change, resource creation, real provider request or child-data access occurred. Integration guidance now explicitly excludes Sites deployment of this child-directed application and requires a separately authorized host and identity boundary.
+
+---
+
 # Undeployed client/provider response cleanup — 2026-11-13
 
 ## Reproduced defects and minimal repair
