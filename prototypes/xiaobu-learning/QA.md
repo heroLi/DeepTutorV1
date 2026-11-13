@@ -1,3 +1,17 @@
+# Parent-managed local backup verification — 2026-11-13
+
+- Final ordinary suite: 216/216 Node tests passed, including 13 backup-model, 12 controller/UI and 5 timezone groups. Independent final source review found no security or record-integrity blockers; JavaScript syntax and whitespace checks passed.
+- A strict versioned JSON parser rejects duplicate/unknown/dangerous keys, unsupported shapes, oversized/deep/excessive structures and semantically inconsistent practice, test, wrong-answer and learning-loop records. The 2 MiB limit rejects rather than truncates. Parsed backups are immutable; restore clones into an empty profile only and preserves the other profile and input objects.
+- The UI previews profile/time/counts and requires explicit confirmation. It rechecks empty target and the last observed saved store, writes successfully before replacing in-memory state, and rejects stale other-page changes. Cancel, route/profile changes, read timeout/late completion, duplicate confirm, storage failures, object-URL cleanup and download errors have regressions. This check is not an atomic cross-tab lock or cloud synchronization.
+- Corrected a pre-existing timezone bug: a historical review's early flag must not be recomputed in the restoring device's timezone. Shanghai/Los Angeles round-trips retain entire stores; invalid types and incompatible practice/review shapes remain rejected. This preserves a historical snapshot, not a claim of record authenticity.
+- Real desktop Chromium QA completed a synthetic two-question math practice, recorded one wrong attempt, downloaded an actual profile-A JSON and parsed its exact completed/wrong counts. The nonempty A profile disallowed restore, empty B stayed separate, and an invalid local JSON was rejected without changing B. The UI only states that download was initiated, not that the user saved it.
+- Browser file-selection approval remains unresolved for the next valid-file import. The successful preview/cancel/restore/reload path is covered by model/controller tests but has NOT yet been accepted end-to-end through the actual browser chooser. No repeat or alternate upload route was used while approval is pending.
+- The real desktop question/video workspace remained one screen at 1180 x 757; playback, pause and +/-5 second controls worked on the existing 69.273243-second MP4. New backup-panel layouts were inspected at 390 x 844, 768 x 1024, 1024 x 768 and 1366 x 768 using a temporary same-origin iframe; no horizontal overflow. Phone download and file controls were 54 and 62 CSS pixels high. This is responsive desktop-browser testing, not physical-device/Safari/assistive-technology acceptance.
+- Temporary layout fixtures and synthetic downloaded records are excluded from source and deployment. QA used only fabricated choices on the local preview origin; no production learning records were read or changed. Browser logs showed extension metadata errors, not an observed application error.
+- This is manual, browser-local backup, not secure parent authentication, reliable cloud storage or automatic sync. No real model call, fee, microphone/recording upload, secret lookup, hosting migration or sharing change.
+
+---
+
 # Actual local D1/workerd verification — 2026-11-13
 
 - 186/186 ordinary Node tests passed after the Worker transport fix and optional-harness release guard. Independent provider review passed, including a rejected response whose body cancellation never settles.

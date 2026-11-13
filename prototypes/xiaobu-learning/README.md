@@ -10,6 +10,7 @@ A private, buildless static learning preview for 小步讲题 / DeepTutorV1.
 - Sample assessments display one question at a time, with numbered navigation, saved question position and answers, and a gated final submission. Results show one explanation at a time. Wrong-question retries and completion summaries also use the compact workspace.
 - 69-second real animated H.264/AAC video explaining 12 ÷ 3 = 4, with offline Mandarin Tingting narration and burned-in Chinese subtitles. The video ends with an 18 ÷ 3 transfer prompt. Large child-friendly buttons below the video provide play/pause, 5-second rewind/forward and replay at the end. Native controls still provide pause, seek and full screen. Buttons have descriptive accessible labels, quiet state announcements and 80px minimum touch height on phone layouts; compact learning panes retain at least 64px media controls.
 - Two anonymous browser-local profiles A/B, ongoing practice restore, original mistake records, correction retries, four-question sample-unit assessments, stored result explanations and a parent summary.
+- Parent-managed local backup: download one anonymous profile as bounded JSON, inspect a local file and explicitly restore it only into an empty profile. It never uploads, automatically syncs, merges or overwrites records. Files contain learning history and must be kept private. Strict format checks do not authenticate the records; same-browser users can access the controls.
 - Records persist only in this browser through localStorage, are not cloud backups, may be lost when browser data is cleared and do not sync across devices. Both profiles are visible to anyone using the same browser; they are not separate authenticated accounts. A user can clear the current profile after confirmation.
 - A new question-dialogue page offers nine authored questions, four finite follow-up intents and local text matching. Unknown text is not treated as model understanding. Recent dialogue exists only in page memory and is cleared on question/profile/route changes and refresh; it never changes learning scores or records.
 - Optional voice input requires the browser to confirm an already-installed on-device zh-CN recognizer; there is no cloud fallback or language-pack download. Recognition starts only on an explicit click, is capped at 20 seconds, and places a transcript in the input for review before a separate local submission. Read-aloud uses only a voice explicitly marked local by the browser. Unsupported capabilities remain disabled with an explanation. Physical-device recognition and actual spoken output have not been verified.
@@ -23,7 +24,7 @@ A private, buildless static learning preview for 小步讲题 / DeepTutorV1.
 - No real child information is used in the examples or tests. The page asks users not to type personal details. Optional text/transcripts are processed only in page memory, never persisted or transmitted by the app; no recording is stored. Selected practice answers, timestamps and progress remain browser-local.
 - No cloud database, analytics, remote model, remote TTS or video-generation service is invoked. The video is a pre-rendered local asset; its offline narration source and exact script are retained in `sources/narration`.
 - The finite questions and answers are inspectable in browser source, so this is not a secure assessment. Scores do not establish mastery.
-- Does not provide Shanghai textbook alignment, live DeepSeek dialogue, arbitrary-question tutoring, uploads, cross-device records or a full family learning system.
+- Does not provide Shanghai textbook alignment, live DeepSeek dialogue, arbitrary-question tutoring, network uploads, automatic cross-device record synchronization or a full family learning system. A parent can manually transfer a local backup file.
 - Hosting audience is owner-only via Sites. Never broaden sharing without the user's request.
 
 ## Offline model safety contract
@@ -50,7 +51,7 @@ The GitHub mirror excludes `.openai/`, Git metadata, raw narration AIFF files an
 
 ## Local Worker migration candidate
 
-The isolated official Worker build preserved all 13 assets and exposed a local video Range compatibility issue. A bounded, single-video adapter and portable regressions are now in source; [migration evidence and remaining gates](docs/WORKER_MIGRATION.md) distinguish the successful local checks from unverified cloud deployment. The live static Site is unchanged.
+The isolated official Worker build preserved all 13 assets and exposed a local video Range compatibility issue. A bounded, single-video adapter and portable regressions are now in source; [migration evidence and remaining gates](docs/WORKER_MIGRATION.md) distinguish the successful local checks from unverified cloud deployment. That migration candidate does not change the static hosting configuration.
 
 ## Optional real local D1 verification
 
