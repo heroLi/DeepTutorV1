@@ -21,6 +21,25 @@ export function createD1Ledger({db,now=Date.now}={}){
  const ledger=Object.freeze({kind:'durable-atomic',
   async assertReady({scope,currency,limitMicros,ownerId}={}){if(!text(scope,SCOPE)||!CURRENCIES.includes(currency)||!money(limitMicros)||(ownerId!==undefined&&!text(ownerId,KEY)))throw fault('INVALID_CONFIG');const [row]=await rows(db,'SELECT * FROM tutor_scopes WHERE scope=?',scope);checkScope(row,{currency,limitMicros,ownerId},clock(now));return true;},
   async authorizeProfile(principal,profileId){if(!text(principal?.id,KEY)||!['A','B'].includes(profileId))return false;const found=await rows(db,'SELECT active FROM tutor_profiles WHERE owner_id=? AND profile_id=?',principal.id,profileId);return found.length===1&&found[0].active===1;},
+  // Advisory scope status, NOT provider health, identity or individual-profile authorization.
+  // One SELECT produces a consistent snapshot; inspection never changes counters or last_seen.
+  async getScopeStatus(input){
+   if(!exactObject(input,['scope','principalId','currency','limitMicros','reservationMicros']))throw fault('INVALID_REQUEST');
+   const {scope,principalId,currency,limitMicros,reservationMicros}=input;
+   if(!text(scope,SCOPE)||!text(principalId,KEY)||!CURRENCIES.includes(currency)||!money(limitMicros)||!money(reservationMicros))throw fault('INVALID_REQUEST');
+   let time;try{time=now();}catch{}const numericClock=Number.isSafeInteger(time)&&time>=0;
+   const result=await rows(db,`SELECT s.currency,s.limit_micros,s.spent_micros,s.reserved_micros,s.expires_ms,s.last_seen_ms,s.frozen,s.max_inflight,s.max_requests,s.window_ms,
+    (SELECT count(*) FROM tutor_claims c WHERE c.scope=s.scope AND c.principal_id=s.owner_id AND c.state='pending') AS pending_count,
+    (SELECT count(*) FROM tutor_claims c WHERE c.scope=s.scope AND c.principal_id=s.owner_id AND c.created_ms > ?-s.window_ms) AS recent_count
+    FROM tutor_scopes s WHERE s.scope=? AND s.owner_id=?`,numericClock?time:0,scope,principalId);
+   if(result.length!==1)throw fault('FORBIDDEN');const row=result[0];
+   if(row.currency!==currency||row.limit_micros!==limitMicros)throw fault('SCOPE_MISMATCH');
+   if(!money(row.limit_micros)||!['spent_micros','reserved_micros','pending_count','recent_count','expires_ms','last_seen_ms','max_inflight','max_requests','window_ms'].every(k=>Number.isSafeInteger(row[k])&&row[k]>=0)||row.spent_micros+row.reserved_micros>row.limit_micros||![0,1].includes(row.frozen)||row.max_inflight<1||row.max_inflight>100||row.max_requests<1||row.max_requests>1000||row.window_ms<1000||row.window_ms>86400000||row.pending_count>1e12||row.recent_count>1e12)throw fault('LEDGER_UNAVAILABLE');
+   const available=row.limit_micros-row.spent_micros-row.reserved_micros,clockValid=numericClock&&time>=row.last_seen_ms,expired=numericClock?time>=row.expires_ms:null;
+   const quotaAllowed=reservationMicros<=available,inflightAllowed=row.pending_count<row.max_inflight,rateAllowed=clockValid&&row.recent_count<row.max_requests;
+   const reasons=[];if(row.frozen)reasons.push('SCOPE_FROZEN');if(expired)reasons.push('SCOPE_EXPIRED');if(!clockValid)reasons.push('CLOCK_INVALID');if(!quotaAllowed)reasons.push('BUDGET_EXHAUSTED');if(!inflightAllowed)reasons.push('INFLIGHT_LIMIT');if(clockValid&&!rateAllowed)reasons.push('RATE_LIMIT');
+   return Object.freeze({currency,unit:currency+'-microunits',accounting:'conservative-reservations-not-provider-bill',capMicros:row.limit_micros,spentMicros:row.spent_micros,reservedMicros:row.reserved_micros,availableMicros:available,nextReservationMicros:reservationMicros,pendingCount:row.pending_count,inflightLimit:row.max_inflight,recentRequestCount:numericClock?row.recent_count:null,requestLimit:row.max_requests,windowMs:row.window_ms,frozen:row.frozen===1,expired,clockValid,quotaAllowed,inflightAllowed,rateAllowed,canRequest:reasons.length===0,reasons:Object.freeze(reasons),observedAtMs:numericClock?time:null,expiresAtMs:row.expires_ms});
+  },
   async reserveAndClaim({key,fingerprint,scope,currency,limitMicros,reservationMicros}={}){
    if(!text(scope,SCOPE)||!CURRENCIES.includes(currency)||!money(limitMicros)||!money(reservationMicros)||reservationMicros>limitMicros)throw fault('INVALID_REQUEST');
    const [keyScope,principalId,requestId]=parseArray(key,3),[profileId,questionId,intent]=parseArray(fingerprint,3);

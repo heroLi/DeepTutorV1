@@ -24,6 +24,16 @@ Success is `{ok:true,result:{mode,questionId,intent,text,followUp,answer}}`. Mod
 
 Responses have byte, UTF-8, JSON/schema and canonical-value validation. Empty content, non-stop finish reasons, unexpected model, tools, reasoning output, missing/out-of-bound usage and arithmetic mismatch fail closed. Timeouts cover both headers and response reading. Cancellation is propagated, but an upstream request can still incur cost; cancellation is not a refund.
 
+## Read-only API status
+
+`GET /api/tutor/status` is composed by the runtime and can also be built as a standalone `createTutorStatusHandler`. It uses the same trusted identity boundary and checks persisted scope ownership before exposing any quota. A supplied Origin must match exactly. Normal browser same-origin GET requests may omit Origin; in that case `Sec-Fetch-Site: same-origin` plus `x-xiaobu-request: 1` is required. Cross-site and missing-origin/missing-metadata requests are rejected. Browser code must not try to manufacture Origin or identity headers.
+
+Status reads use one SELECT snapshot and never reserve money, settle a claim, refresh counters, call the provider or alter the database. They report configured mode, synthetic-only scope, explicit TEST/CNY/USD microunits, conservative booked/reserved/available amounts, pending and rolling-request counts, and allowlisted stopping reasons. They expose no owner ID, scope reference, request/claim details, tokens or credentials. These amounts are upper-bound bookkeeping, not a provider invoice.
+
+`scopeAndConfigurationAllowAttempt` is only a local configuration/quota precheck. Profile authorization is still required for POST. `platformVerified:false` and `upstreamConnectivity:not-verified` are explicit: this endpoint does not prove deployed authentication or DeepSeek connectivity. Live pricing-readiness checks must return a positive safe cost bound within the reservation; false, undefined, expired or asynchronous rejected checks cannot authorize a request.
+
+Known operational stops (frozen/expired scope, invalid clock, genuinely expired pricing) can create a diagnostic-only runtime after cold start, so an authorized owner can understand why requests stopped. POST stays 503 and the runtime does not auto-resume; `RUNTIME_RESTART_REQUIRED` prevents a later recovered snapshot from promising that this instance can send. Missing schema, wrong scope/currency/cap, absent trust boundary, credentials or approval remain construction failures. This exception never creates an otherwise unauthorised provider or resets any quota.
+
 ## Live gate and cost assumptions
 
 Live construction requires a server-injected credential, explicit synthetic-only approval record (provider, currency, positive total cap and unique approval reference), matching fresh model pricing, injected transport and trusted authentication/profile/ledger dependencies. The service checks these exact dependency bindings again. Configuration is not accepted from a browser. Declaring a flag or `kind:'durable-atomic'` does not implement or prove security; deployment review must verify the dependencies.

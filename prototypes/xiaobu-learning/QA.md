@@ -1,3 +1,15 @@
+# Read-only API status verification — 2026-11-13
+
+- 156/156 Node tests passed, including 9 ledger-status and 12 HTTP-status cases. All source/test JavaScript syntax and whitespace checks passed. Frontend, media, migration and hosting configuration are unchanged.
+- A single SQLite SELECT snapshot returns only owner-authorized bounded quota/status fields. Repeated inspection leaves profiles, scopes and claims byte-for-byte unchanged and invokes no provider. Unknown scope and another owner receive the same safe rejection.
+- TEST/CNY units and conservative accounting labels are explicit. Counts and stop reasons match the real reservation guards for budget, in-flight requests, rolling limits, frozen/expired scopes and invalid clocks. No claim/token, owner ID, credential or raw SQL appears in the response.
+- Integrated fake-provider POST still works; subsequent GET shows committed conservative spend and budget exhaustion without another call. Async rejected, false/undefined, invalid or excessive readiness bounds cannot authorize requests.
+- Independent review reproduced two gaps, both fixed and covered: ordinary browser same-origin GET without Origin now uses same-origin fetch metadata plus the custom header; frozen/expired/clock-invalid/price-expired cold starts retain authenticated read-only diagnostics while POST remains stopped. Wrong/absent Origin and metadata are not broadly accepted.
+- Diagnostic instances require explicit reconstruction rather than silently resuming. Missing auth boundary, schema, credentials, approval and mismatched scope/currency/cap are not relaxed by the diagnostics path.
+- These are local SQL/runtime contract tests, not a real browser-to-hosted-API, Cloudflare D1 or DeepSeek connectivity acceptance. No cloud resources, fees, real child data, keys or sharing changes were introduced. The public-source development branch is updated separately; hosted preview remains version 6.
+
+---
+
 # Persistent backend and identity-adapter verification — 2026-11-13
 
 - 135/135 Node tests passed: 13 new persistent-ledger tests and 7 runtime/auth/body tests, plus the full prior suite. Syntax and whitespace checks passed. No new runtime dependency was installed; tests use built-in SQLite (Node 22.13+).

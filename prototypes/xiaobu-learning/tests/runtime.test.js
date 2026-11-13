@@ -112,7 +112,7 @@ test('live composition with synthetic CNY persists charges/cache across restart 
   // No global fetch, real credential, or network. Live code path uses this stub.
   const fetchImpl=async(url,options)=>{calls++;assert.equal(url,'https://api.deepseek.com/chat/completions');assert.equal(options.headers.authorization,'Bearer synthetic-test-key');return new Response(JSON.stringify({model:'deepseek-flash',usage:{prompt_tokens:100,completion_tokens:100},choices:[{index:0,finish_reason:'stop',message:{role:'assistant',content:JSON.stringify(dialogueFixture({questionId:input.questionId,intent:input.intent}))}}]}),{headers:{'content-type':'application/json'}});};
   const config={mode:'live',origin,boundary,ledger,approval,pricing,credential:'synthetic-test-key',fetchImpl,now,reservationMicros:12000};
-  for(const patch of [{credential:undefined},{fetchImpl:undefined},{approval:undefined},{approval:{...approval,syntheticOnly:false}},{approval:{...approval,spendLimitMicros:30000}},{approval:{...approval,currency:'USD'}},{approval:{...approval,reference:'offline-fixture',spendLimitMicros:1000}},{pricing:{...pricing,expiresAt:new Date(nowMs).toISOString()}}])await assert.rejects(createTutorRuntime({...config,...patch}));
+  for(const patch of [{credential:undefined},{fetchImpl:undefined},{approval:undefined},{approval:{...approval,syntheticOnly:false}},{approval:{...approval,spendLimitMicros:30000}},{approval:{...approval,currency:'USD'}},{approval:{...approval,reference:'offline-fixture',spendLimitMicros:1000}}])await assert.rejects(createTutorRuntime({...config,...patch}));
   assert.equal(calls,0);
   const runtime=await createTutorRuntime(config);
   for(let i=0;i<2;i++){const response=await runtime.fetch(admit(req()));assert.equal(response.status,200);assert.equal((await response.json()).result.mode,'deepseek');}assert.equal(calls,1);
@@ -125,7 +125,7 @@ test('live composition with synthetic CNY persists charges/cache across restart 
   const restarted=await createTutorRuntime({...config,ledger:reopenedLedger});
   assert.equal((await restarted.fetch(admit(req()))).status,200);assert.equal((await restarted.fetch(over())).status,429);assert.equal(calls,1);
   assert.deepEqual(await readBudget(),{currency:'CNY',spent_micros:12000,reserved_micros:0});
-  await assert.rejects(createTutorRuntime({...config,ledger:createD1Ledger({db:connection.db,now:()=>nowMs+60000})}),{code:'SCOPE_EXPIRED'});
+  const expired=await createTutorRuntime({...config,ledger:createD1Ledger({db:connection.db,now:()=>nowMs+60000})});assert.equal((await expired.fetch(admit(req()))).status,503);
   assert.equal(calls,1);
  }finally{await connection?.close();await rm(directory,{recursive:true,force:true});}
 });
