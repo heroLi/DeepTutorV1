@@ -1,0 +1,71 @@
+{
+  "assets": [
+    {
+      "path": "app.js",
+      "size": 34210,
+      "sha256": "4c3a33542f83c1391d410e23f1e620bd5a5bb5f98263272a819df7cf59b2be3b"
+    },
+    {
+      "path": "dialogue-model.js",
+      "size": 3061,
+      "sha256": "b61de960ed3ac4b676fca2d2da564e054b2f709ae0226ccba458921ac439fc24"
+    },
+    {
+      "path": "dialogue-page.js",
+      "size": 6028,
+      "sha256": "ab827246de5ae6fb73e8df3f0fe6f47cde2c355fb515fc4a3676b5825e3d8ccb"
+    },
+    {
+      "path": "index.html",
+      "size": 3186,
+      "sha256": "b6e5c667f5d978eafa1faa5f3fb0d4af0b05341d4797b1ebff1d8c5b84060198"
+    },
+    {
+      "path": "loop-model.js",
+      "size": 12558,
+      "sha256": "856f29cdda6e406139bc2f08e9c3f94b607dd36cca1ca24f286c156d61923cc9"
+    },
+    {
+      "path": "loop-ui.js",
+      "size": 9813,
+      "sha256": "fdd2d83ee0ec8b54ce547e4585e2ebae6ba9c76f7fa852035c62f037f50da44b"
+    },
+    {
+      "path": "media/average-sharing-poster.jpg",
+      "size": 114124,
+      "sha256": "ac124f1a8069ee585b03aab87536f40b60aea5611e72be834f15304ab8903fb7"
+    },
+    {
+      "path": "media/average-sharing.mp4",
+      "size": 1663403,
+      "sha256": "f7ad7412302d604309b0e00adb35d5689eda0a8f548f292263f76c56e2232acf"
+    },
+    {
+      "path": "media/average-sharing.vtt",
+      "size": 1507,
+      "sha256": "3cc301a39c6a6a8e6c35c8c9b293ed5ed88728e7441d86abc7899b15f2280a0a"
+    },
+    {
+      "path": "model.js",
+      "size": 12847,
+      "sha256": "0dc5121019634b7bbba02304a966e5506e3cbbeca6ba5d935c2e435246a35fb2"
+    },
+    {
+      "path": "styles.css",
+      "size": 34961,
+      "sha256": "f59ac616ee6b613f2c657dc60a0ac95ad8efc42f3e070e6a09ad937537d7eb7b"
+    },
+    {
+      "path": "video-controls.js",
+      "size": 5327,
+      "sha256": "4feec7a2e2ef9d7d8f0829ff3ee1a9c31d8dab297220eceb39269e9612556659"
+    },
+    {
+      "path": "voice-local.js",
+      "size": 5498,
+      "sha256": "3952abbd6bb962a1502d7166eb8579b306aa766d55dd5d337bd41dec658a220d"
+    }
+  ],
+  "githubSourceCommit": "4c8365c7af520ef4bb4356194f9f8cfb8c0de297",
+  "purpose": "Historical v6 asset snapshot used by the local Worker migration probe; not a promise of hosted verification."
+}

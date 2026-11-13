@@ -47,3 +47,7 @@ Tests require Node 22.13+ for the built-in SQLite test adapter (current local va
 The existing GitHub source repository is public. Owner-only access applies to the hosted Sites preview, not to source code. Repository visibility is unchanged; no learner records or hosting credentials are included.
 
 The GitHub mirror excludes `.openai/`, Git metadata, raw narration AIFF files and all browser/runtime records. It includes the finished MP4, poster and captions so the static page works from a checkout. Raw narration inputs are retained in the original private Sites source, so the GitHub mirror alone is not a full video re-render kit. Never copy a hosting identity or credentials when serving the prototype elsewhere.
+
+## Local Worker migration candidate
+
+The isolated official Worker build preserved all 13 assets and exposed a local video Range compatibility issue. A bounded, single-video adapter and portable regressions are now in source; [migration evidence and remaining gates](docs/WORKER_MIGRATION.md) distinguish the successful local checks from unverified cloud deployment. The live static Site is unchanged.

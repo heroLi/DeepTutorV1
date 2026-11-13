@@ -1,3 +1,15 @@
+# Local Worker/media migration verification — 2026-11-13
+
+- 183/183 Node tests passed, including 5 portable media groups. Existing frontend, API, client, ledger and real-loopback tests remain green. Syntax and whitespace checks passed.
+- An independent official Vinext starter installation/build produced a Worker plus static assets with no Site identity or D1/R2 resources. All 13 original assets matched their hashes; the original MP4 remains unchanged.
+- Default local workerd asset responses ignored Range. An authored, exact-MP4 adapter using a declared binding and selective Worker-first route corrected this in the isolated build. Final protocol evidence contains 27 passing records plus disabled API assertions, with zero outbound attempts during the protocol run.
+- Verified GET/HEAD, range slices/lengths, 416, If-Range, 304, exact routing and 404s. Added portable edge cases cover one-byte/open-ended/clamped/suffix ranges, private/no-store responses, bounds, corrupt/error assets, cancellation, timeout and late-source cancellation without reading late data.
+- The module and tests were copied into source without the starter, generated output, duplicate media, new dependencies or real credentials. The module is not imported by the shipped static UI and has not been deployed.
+- No browser/device playback, hosted ingress, cloud storage or real model call was verified. Traffic/concurrency and actual platform binding/access behavior remain future deployment gates. See docs/WORKER_MIGRATION.md for exact scope and tool versions.
+- The private Site stays v6; its manifest, audience and published assets are unchanged. No cloud resources or API spending were created.
+
+---
+
 # Real loopback HTTP fixture verification — 2026-11-13
 
 - 178/178 Node tests passed, including 7 real loopback HTTP tests. Source/test syntax and whitespace checks passed. No extra dependencies, frontend changes, migrations or cloud deployment.
