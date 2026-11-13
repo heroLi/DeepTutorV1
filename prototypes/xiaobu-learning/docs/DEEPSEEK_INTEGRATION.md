@@ -61,6 +61,12 @@ The original protocol tests retain an in-memory fake. New ledger/runtime tests i
 
 Authentication precedes request-body parsing. `server/request-body.js` enforces 1024 bytes, fatal UTF-8/JSON parsing, a configurable 1–10000ms read deadline (default 2000ms), and cancellation. Timeout/late data cannot reach the ledger or provider; cancellation cleanup is not allowed to hang the handler.
 
+## Interrupted acknowledgment evidence
+
+The optional genuine-local-D1 [recovery harness](../dev/d1-readiness/README.md#interrupted-acknowledgments-and-restart-verification) extends ordinary SQLite tests with actual Worker/D1 persistence across restart. Three explicit boundary faults were verified: reservation committed but acknowledgment lost; settlement rejected before its transaction; settlement committed but acknowledgment lost. Pending cases retain 100 TEST units and replay as `IN_PROGRESS` without another fake-provider call. Committed settlement replays its canonical result without a second charge. The remaining budget cannot consume the held reservation, and status reads do not modify records. The ordinary 13-group local D1 suite was also rerun against the current source.
+
+This does not release ambiguous claims, prove a hard crash or cloud deployment, or resolve actual provider invoices. HTTP 503 or client timeout must not be interpreted as proof that nothing happened. The client still has no automatic retry; same-ID replay was explicitly exercised only in the synthetic harness. Do not change IDs or approval references to bypass a pending result. See [path-free source-hashed evidence](d1-recovery-evidence.json).
+
 ## Remaining steps before any real use
 
 1. Select and authorize an HTTPS server deployment; static Sites does not run these modules. Bundle only public frontend files into the Site, never server configuration or keys.

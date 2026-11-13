@@ -60,3 +60,8 @@ The isolated official Worker build preserved all 13 assets and exposed a local v
 ## Optional real local D1 verification
 
 The [local D1/workerd harness](dev/d1-readiness/README.md) now runs the actual ledger/runtime through an official local D1 binding, including restart persistence and rollback/concurrency checks. It is separate from ordinary `npm test` and requires the specified installed toolchain. [Reviewed result](docs/d1-workerd-evidence.json): 13 groups passed, 10 fake-provider calls, zero external attempts. This found and corrected a Worker redirect compatibility issue; it does not enable the hosted API or prove production authentication/billing.
+
+
+## Interrupted API acknowledgment verification
+
+The optional [local D1 recovery harness](dev/d1-readiness/README.md#interrupted-acknowledgments-and-restart-verification) now verifies committed-but-unacknowledged reservations and settlements, and a failed pre-commit settlement, with actual D1 persistence and workerd restart. Pending operations remain reserved without a second provider call; committed settlements replay without double charging. [Reviewed evidence](docs/d1-recovery-evidence.json) uses TEST units and fake local provider responses only. This is source-only reliability validation, not a newly connected API, real crash certification or automatic financial reconciliation. The static private Site remains unchanged.

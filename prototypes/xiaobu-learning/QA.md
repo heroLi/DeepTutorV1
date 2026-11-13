@@ -1,3 +1,15 @@
+# Undeployed API interrupted-acknowledgment reliability — 2026-11-13
+
+- 325/325 dependency-free Node tests passed: all 317 prior tests plus 8 development-only fault-injector groups. These cover default pass-through, exact ordered SQL targeting, one-shot before/after injection, concurrent matching batches and unchanged native exceptions. Syntax and diff checks passed.
+- The existing genuine local D1/workerd 13-group baseline passed again against current source: 10 fake-provider service-binding calls, zero Worker outbound attempts. Its path-free evidence was refreshed with current exact source hashes.
+- The new optional recovery harness passed three runs, including an independent repeat. It applied the unchanged schema with the official local Wrangler CLI into three separate uniquely owned temporary states, each using synthetic identity and a 1000 TEST-unit scope. No cloud resource or credential was used.
+- Reservation committed / lost acknowledgment: initial HTTP 503, zero provider calls, 100 reserved; restart replay 409 `IN_PROGRESS`, reservation unchanged. Settlement rejected before submission: initial HTTP 503 after one fake-provider call, 100 reserved; restart replay 409 with no repeat provider call. Settlement committed / lost acknowledgment: initial HTTP 503 after one fake-provider call, 100 spent; restart replay 200 with the cached authored answer, no duplicate charge or call.
+- In all three cases, same-ID changed fingerprints returned 409, status reads left rows unchanged, and exactly nine additional 100-unit attempts fit the remaining 900. Pending cases retained the original reservation even after later calls settled. Across the recovery cases there were 29 local fake-provider calls and zero Worker outbound attempts. This is conservative TEST bookkeeping, not actual spending.
+- Faults are injected at explicit D1 batch boundaries and followed by actual orderly workerd disposal/restart. This is not a hard process crash, network partition, hosted D1 or production identity certification. There is no refund, automatic claim release, unfreeze, new approval or HTTP administrator route. The unresolved production gates remain in the integration documentation.
+- Only development harness, tests and documentation changed. Static browser assets, hosting manifest, server/runtime logic, media and local learner records are unchanged. No new Site version or deployment is necessary for these source-only verification changes; the current private preview remains version 12. No browser verification was rerun because no shipped UI changed.
+
+---
+
 # Date-window parent summary verification — 2026-11-13
 
 ## Scope and final checks

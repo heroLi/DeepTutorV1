@@ -1,6 +1,6 @@
 # Optional genuine local D1/workerd verification
 
-These four authored files are a development-only harness, suitable for an optional `dev/d1-readiness/` folder:
+The baseline harness uses these four authored development-only files in `dev/d1-readiness/`:
 
 - `verify.mjs`
 - `worker.mjs`
@@ -54,3 +54,32 @@ The final candidate was actually executed against the selected source checkout a
 Ten fake-provider calls, including the refused 302, and zero external attempts were recorded. The harness writes `evidence/results.json` (source hashes, versions, checks) and `evidence/migration.log`. These are local D1/workerd proofs, not production provisioning, billing, Sites ingress, browser playback, real provider testing or distributed-service guarantees.
 
 Normal completion cleans the owned temporary state. A hard kill or watchdog termination can leave that synthetic temporary directory behind; the next run creates a fresh independent fixture and does not delete arbitrary older paths. Generated evidence/logs are ignored by Git; only an explicitly reviewed, path-free result summary should be copied into source documentation.
+
+
+## Interrupted acknowledgments and restart verification
+
+The separate recovery harness adds `fault-binding.mjs`, `recovery-worker.mjs` and `verify-recovery.mjs`. Run it with the same already-installed, version-checked official toolchain:
+
+```sh
+node dev/d1-readiness/verify-recovery.mjs \
+  --source /absolute/path/to/learning-repository \
+  --toolchain /absolute/path/to/official-installed-vinext-starter
+```
+
+This is a development fixture, not a production entrypoint or recovery endpoint. The fixed synthetic identity must never be deployed. Each of three cases creates its own local D1 database state, migrates the unchanged schema with `--local`, and provisions only a 1000 TEST-unit scope. A host-only binding selects a one-shot fault; URL, headers and request body cannot choose or activate it. The default binding injects nothing. The wrapper matches both exact SQL statements in order and forwards actual native statements/results without fabricating commits or rewriting production SQL.
+
+| Injected boundary | First HTTP result | Before restart | Same request after actual workerd restart |
+| --- | --- | --- | --- |
+| Reservation batch succeeded; acknowledgment lost | 503 `LEDGER_UNAVAILABLE` | 0 provider calls, 100 reserved, 0 spent | 409 `IN_PROGRESS`, no provider call, reservation retained |
+| Settlement batch fails before submission | 503 `LEDGER_UNAVAILABLE` | 1 fake-provider call, 100 reserved, 0 spent | 409 `IN_PROGRESS`, no second provider call, reservation retained |
+| Settlement batch succeeded; acknowledgment lost | 503 `LEDGER_UNAVAILABLE` | 1 fake-provider call, 0 reserved, 100 spent | 200 cached authored answer, no second call or second charge |
+
+All money values here are synthetic TEST bookkeeping units, not currency or a provider invoice. In every case, changing the same request ID's fingerprint returned 409; read-only status left stored rows unchanged. Exactly nine additional 100-unit attempts fit the remaining 900. For pending cases, holding those nine new fake-provider responses showed ten pending claims and no available budget; after they settled, the old 100-unit reservation remained held. Budget exhaustion prevented an eleventh claim, not an automatic refund or reset. The existing baseline separately verifies an in-flight-limit rejection before budget exhaustion.
+
+The recovery run made 29 total fake-provider service-binding calls across three independent cases and recorded zero Worker outbound attempts. It was executed three times successfully, including an independent repeat; ordinary dependency-free tests additionally cover the injector's exact targeting, pass-through, before/after ordering, one-shot behavior, native failures and concurrent matching calls.
+
+Evidence writes only `evidence/recovery-results.json` and three `recovery-*-migration.log` files, without replacing baseline evidence. Raw logs remain ignored. A reviewed path-free [recovery result](../../docs/d1-recovery-evidence.json) records source and harness hashes. Normal cleanup removes only the runner's uniquely owned temporary root; a hard kill/watchdog can leave that synthetic directory, never an arbitrary cleanup target.
+
+### What this does not prove
+
+These are explicit D1 batch-boundary faults followed by orderly workerd disposal/restart, not an OS/process hard crash, network partition or hosted distributed-failure certification. They do not verify production Sites ingress, cloud D1 provisioning, a real model, provider billing or recovery of an ambiguous pending operation. Pending reservations intentionally remain held indefinitely: do not delete them, auto-refund them, recreate the approval scope or generate a new request ID just to make a request succeed. A later operational investigation must reconcile the database and provider evidence under the approved scope. This harness contains no unfreeze, refund, claim release or public administrator route.

@@ -1,0 +1,268 @@
+{
+  "localOnly": true,
+  "identity": "fixed-synthetic-fixture-not-production-auth",
+  "mode": "offline-test",
+  "currency": "TEST",
+  "checks": [
+    "reservation-after real D1 persistent state, replay, conflict, bounded quota",
+    "settlement-before real D1 persistent state, replay, conflict, bounded quota",
+    "settlement-after real D1 persistent state, replay, conflict, bounded quota"
+  ],
+  "cases": [
+    {
+      "point": "reservation-after",
+      "firstStatus": 503,
+      "initialProviderCalls": 0,
+      "initialQuota": {
+        "currency": "TEST",
+        "unit": "TEST-microunits",
+        "accounting": "conservative-reservations-not-provider-bill",
+        "capMicros": 1000,
+        "spentMicros": 0,
+        "reservedMicros": 100,
+        "availableMicros": 900,
+        "nextReservationMicros": 100,
+        "pendingCount": 1,
+        "inflightLimit": 10,
+        "recentRequestCount": 1,
+        "requestLimit": 100,
+        "windowMs": 60000,
+        "frozen": false,
+        "expired": false,
+        "clockValid": true,
+        "canRequest": true,
+        "quotaAllowed": true,
+        "inflightAllowed": true,
+        "rateAllowed": true,
+        "reasons": [],
+        "observedAtMs": 1794578603982,
+        "expiresAtMs": 1794582203939
+      },
+      "restartReplayStatus": 409,
+      "changedFingerprintStatus": 409,
+      "finalQuota": {
+        "currency": "TEST",
+        "unit": "TEST-microunits",
+        "accounting": "conservative-reservations-not-provider-bill",
+        "capMicros": 1000,
+        "spentMicros": 900,
+        "reservedMicros": 100,
+        "availableMicros": 0,
+        "nextReservationMicros": 100,
+        "pendingCount": 1,
+        "inflightLimit": 10,
+        "recentRequestCount": 10,
+        "requestLimit": 100,
+        "windowMs": 60000,
+        "frozen": false,
+        "expired": false,
+        "clockValid": true,
+        "canRequest": false,
+        "quotaAllowed": false,
+        "inflightAllowed": true,
+        "rateAllowed": true,
+        "reasons": [
+          "BUDGET_EXHAUSTED"
+        ],
+        "observedAtMs": 1794578604372,
+        "expiresAtMs": 1794582203939
+      },
+      "finalProviderCalls": 9,
+      "statusReadsUnchanged": true
+    },
+    {
+      "point": "settlement-before",
+      "firstStatus": 503,
+      "initialProviderCalls": 1,
+      "initialQuota": {
+        "currency": "TEST",
+        "unit": "TEST-microunits",
+        "accounting": "conservative-reservations-not-provider-bill",
+        "capMicros": 1000,
+        "spentMicros": 0,
+        "reservedMicros": 100,
+        "availableMicros": 900,
+        "nextReservationMicros": 100,
+        "pendingCount": 1,
+        "inflightLimit": 10,
+        "recentRequestCount": 1,
+        "requestLimit": 100,
+        "windowMs": 60000,
+        "frozen": false,
+        "expired": false,
+        "clockValid": true,
+        "canRequest": true,
+        "quotaAllowed": true,
+        "inflightAllowed": true,
+        "rateAllowed": true,
+        "reasons": [],
+        "observedAtMs": 1794578606074,
+        "expiresAtMs": 1794582206048
+      },
+      "restartReplayStatus": 409,
+      "changedFingerprintStatus": 409,
+      "finalQuota": {
+        "currency": "TEST",
+        "unit": "TEST-microunits",
+        "accounting": "conservative-reservations-not-provider-bill",
+        "capMicros": 1000,
+        "spentMicros": 900,
+        "reservedMicros": 100,
+        "availableMicros": 0,
+        "nextReservationMicros": 100,
+        "pendingCount": 1,
+        "inflightLimit": 10,
+        "recentRequestCount": 10,
+        "requestLimit": 100,
+        "windowMs": 60000,
+        "frozen": false,
+        "expired": false,
+        "clockValid": true,
+        "canRequest": false,
+        "quotaAllowed": false,
+        "inflightAllowed": true,
+        "rateAllowed": true,
+        "reasons": [
+          "BUDGET_EXHAUSTED"
+        ],
+        "observedAtMs": 1794578606378,
+        "expiresAtMs": 1794582206048
+      },
+      "finalProviderCalls": 10,
+      "statusReadsUnchanged": true
+    },
+    {
+      "point": "settlement-after",
+      "firstStatus": 503,
+      "initialProviderCalls": 1,
+      "initialQuota": {
+        "currency": "TEST",
+        "unit": "TEST-microunits",
+        "accounting": "conservative-reservations-not-provider-bill",
+        "capMicros": 1000,
+        "spentMicros": 100,
+        "reservedMicros": 0,
+        "availableMicros": 900,
+        "nextReservationMicros": 100,
+        "pendingCount": 0,
+        "inflightLimit": 10,
+        "recentRequestCount": 1,
+        "requestLimit": 100,
+        "windowMs": 60000,
+        "frozen": false,
+        "expired": false,
+        "clockValid": true,
+        "canRequest": true,
+        "quotaAllowed": true,
+        "inflightAllowed": true,
+        "rateAllowed": true,
+        "reasons": [],
+        "observedAtMs": 1794578607645,
+        "expiresAtMs": 1794582207610
+      },
+      "restartReplayStatus": 200,
+      "changedFingerprintStatus": 409,
+      "finalQuota": {
+        "currency": "TEST",
+        "unit": "TEST-microunits",
+        "accounting": "conservative-reservations-not-provider-bill",
+        "capMicros": 1000,
+        "spentMicros": 1000,
+        "reservedMicros": 0,
+        "availableMicros": 0,
+        "nextReservationMicros": 100,
+        "pendingCount": 0,
+        "inflightLimit": 10,
+        "recentRequestCount": 10,
+        "requestLimit": 100,
+        "windowMs": 60000,
+        "frozen": false,
+        "expired": false,
+        "clockValid": true,
+        "canRequest": false,
+        "quotaAllowed": false,
+        "inflightAllowed": true,
+        "rateAllowed": true,
+        "reasons": [
+          "BUDGET_EXHAUSTED"
+        ],
+        "observedAtMs": 1794578608126,
+        "expiresAtMs": 1794582207610
+      },
+      "finalProviderCalls": 10,
+      "statusReadsUnchanged": true
+    }
+  ],
+  "boundary": "fault injection at D1 batch boundary plus actual workerd disposal/restart; NOT a hard process crash",
+  "outboundAttempts": 0,
+  "passed": true,
+  "cliIsolation": {
+    "privateHome": true,
+    "minimalEnvironment": true,
+    "metrics": false,
+    "cloudMetadataLookup": false
+  },
+  "versions": {
+    "miniflare": "4.20260515.0",
+    "wrangler": "4.92.0"
+  },
+  "sourceFiles": [
+    {
+      "path": "recovery-worker.mjs",
+      "sha256": "cc2307831f0bba544f77590026b9fea78520bedfe576fb627e50813c7a17f013"
+    },
+    {
+      "path": "server/catalogue.js",
+      "sha256": "6469315327d643ce2e5d468f946ad12f82e1a7f42dd69703b33cd8ae44591dcd"
+    },
+    {
+      "path": "server/d1-ledger.js",
+      "sha256": "7a96a3a6c125ac593aa45f1d7209861ff35cca4c5e7970b9f526fbaabd743a13"
+    },
+    {
+      "path": "server/deepseek.js",
+      "sha256": "847d3f4a3a6431a4427cfcd1ff0dd7f691062657687d5d2e8c815f37a96318cb"
+    },
+    {
+      "path": "server/learning-media.js",
+      "sha256": "3a46d8bdc2a79b2f685453c385a247b1ef88f0ec285ec242e5d235868e3cbe8c"
+    },
+    {
+      "path": "server/pricing.js",
+      "sha256": "b24789adb5590cd74aaff262836810040534881a148045b0eae2a2ababe8703f"
+    },
+    {
+      "path": "server/request-body.js",
+      "sha256": "4f53de5cb0b3cc4e2bbe470b86a16a52fd976ed999ec5fabb1f1e7324f9739b3"
+    },
+    {
+      "path": "server/runtime.js",
+      "sha256": "1064a7ceb08e1689ce033a4434b8eb70cdcb63cfdc73c8c9d9a7ee76d46234c2"
+    },
+    {
+      "path": "server/service.js",
+      "sha256": "95c746a523bdd5213fd867c92e6ab2a86b6217e6639630a2797d171bd67404a3"
+    },
+    {
+      "path": "server/sites-auth.js",
+      "sha256": "c9fef92a47f8776f12c9a4fc7200d0f97a5e6b62652e5feb7810694c592b8db8"
+    },
+    {
+      "path": "server/status.js",
+      "sha256": "ef4f9353aaaaef82f7353388082f48acd9d41142819378fc1d03e18f30880cb2"
+    },
+    {
+      "path": "dist/loop-model.js",
+      "sha256": "b8d8aaa341cf553a28bbbf76c7179399a5ea66497132610c6c5845e74985364d"
+    },
+    {
+      "path": "fault-binding.mjs",
+      "sha256": "30935c5d7392e986dfe70e91c441e67a75c5d5052b64ba421653ff7a55d002c0"
+    },
+    {
+      "path": "server/migrations/0001_tutor.sql",
+      "sha256": "03d591af484d9c990e4393de04962b8cc1739a48147906864a05dfd277e02330"
+    }
+  ],
+  "harnessSha256": "58dafbfc0ef963da359d9565530d160fdd84ebb97fc4dafe8c1dc9eb0f040b67"
+}

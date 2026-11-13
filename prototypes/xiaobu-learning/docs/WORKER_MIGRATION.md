@@ -1,6 +1,6 @@
 # Worker migration readiness: local evidence, not a deployment
 
-The private Site still uses static v6. The API runtime, client and this media adapter are source-only. Nothing here enables cloud storage, a real model, microphone upload or new sharing.
+The private Site remains statically hosted. The API runtime, client and this media adapter are source-only. Nothing here enables cloud storage, a real model, microphone upload or new sharing.
 
 ## What was actually verified
 
