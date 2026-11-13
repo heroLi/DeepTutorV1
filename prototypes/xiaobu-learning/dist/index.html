@@ -7,4 +7,14 @@
 <dialog id="info"><form method="dialog"><h2>放心试一试</h2><p>这是小步讲题的轻量练习体验，使用已有项目的原创示例，暂未接上海教材或 DeepSeek。</p><ul><li>不填写姓名、学校、照片或真实学习资料。</li><li>练习、测评与错题记录只存在当前浏览器。刷新可恢复，清除浏览器数据可能丢失，不跨设备同步。两个匿名档案只是记录分组，不是身份验证。</li><li>有原创数学视频示例；DeepSeek 尚未接通。题目对话是本地规则示例；只有浏览器支持已安装的本机中文识别/声音时才可使用语音，不改用云服务、不保存对话或录音。</li><li>此站点目前仅对你的账号开放。电脑和手机需登录同一账号。</li></ul><p class="muted">这是静态学习示例，不是正式测评，也不是完整家庭学习系统。答案可从浏览器代码查看，不适用于保密考试。</p><button class="primary">知道了</button></form></dialog>
 <dialog id="clear-confirm"><h2>清除此档案的记录？</h2><p>将清除 <strong id="clear-label"></strong> 的练习、小步引导、复习安排、测评、错题与订正记录，无法在此页面恢复。另一个档案不受影响。</p><div class="dialog-actions"><button class="secondary" data-close-dialog>取消</button><button class="primary" id="confirm-clear">确认清除此档案</button></div></dialog>
 <dialog id="replace-test"><h2>开始新一轮测评？</h2><p>当前未交卷的作答会被替换。已交卷的小结和错题记录仍然保留。</p><div class="dialog-actions"><button class="secondary" data-close-dialog>继续保留</button><button class="primary" id="confirm-replace">确认开始新测评</button></div></dialog>
+<dialog id="storage-conflict" class="storage-conflict" role="alertdialog" aria-labelledby="storage-conflict-title" aria-describedby="storage-conflict-detail storage-conflict-explanation">
+<h2 id="storage-conflict-title" tabindex="-1">先保护本页的记录</h2><p id="storage-conflict-detail"></p><p id="storage-conflict-current"></p>
+<p id="storage-conflict-explanation">不会自动合并、删除或载入别页记录。视频、语音和文件读取已暂停。可以先下载本页档案的临时备份，再决定是否重新载入。</p>
+<div class="storage-rescue-actions"><button type="button" class="secondary" id="storage-backup-A">下载本页临时档案 A（不含别页新记录）</button><button type="button" class="secondary" id="storage-backup-B">下载本页临时档案 B（不含别页新记录）</button></div>
+<p class="muted">临时备份只含本页内存中的记录，不含另一页面的新记录；不是云备份。文件含学习记录，请由家长保管，并在下载列表确认保存成功。</p>
+<p class="storage-reload-warning">重新载入会放弃本页尚未保存的操作，读取浏览器最新记录，不会自动合并。请先确认需要的临时备份已保管。</p>
+<button type="button" class="primary" id="storage-reload">重新载入最新记录</button>
+<p id="storage-conflict-status" role="status" aria-live="polite" aria-atomic="true"></p>
+<p class="muted">这是本机记录变化检测，不是跨标签页原子锁，也不跨设备同步。操作时请只保留一个学习页面。</p>
+</dialog>
 </body></html>
