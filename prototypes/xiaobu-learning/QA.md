@@ -1,3 +1,25 @@
+# Filtered, paginated wrong notebook verification — 2026-11-13
+
+## Final checks
+- 276/276 Node tests passed, including 12 new pure-projection and 6 new app/UI groups. Independent review, JavaScript syntax checks and `git diff --check` passed.
+- The notebook is a read-only projection until the existing explicit correction action. It changes no storage schema or backup format, makes no network requests and retains the storage coordinator's checks. Media, backend files, hosting configuration and owner-private audience are unchanged.
+- Tests cover all subject/type filter combinations, repeated mistakes, deterministic chronological ordering, missing/invalid projection fields, inherited-key filters, fixed six-record pages, out-of-range inputs, correction page clamp, detached/frozen inputs, escaped text/IDs, A/B separation, route/profile/clear/restore resets and conflict blocking. Loop first/retry/transfer/review evidence uses its own original question and never acquires a fabricated correction status.
+
+## Real browser acceptance
+- Using ordinary supported Chromium controls, created synthetic records only in the local preview's profile B: a four-error English assessment, a Chinese loop with separate incorrect first/retry/transfer choices and two additional repeated math `I do not know` attempts. Existing profile A was left unchanged. No records or fixtures are included in deployment assets.
+- Ten mixed records displayed as six then four, newest first. Pending-only filtering gave seven then one. Corrected the final pending item from original math choice 3 to 4; returning retained the filter, clamped to page 1/1 with six pending items and kept all ten original records. Corrected-only showed the original choice and separate correction date. Reload retained the correction but reset temporary filters.
+- English plus corrected-only produced an honest zero-match state rather than a global no-history claim. Switching to A reset filters and showed its one unchanged original math error; returning to B and reloading retained B's ten records. Chinese plus loop-only showed three separate stages with their own choice-specific reasons and no correction button.
+- A temporary same-origin iframe tested 390×844, 768×1024, 1024×768 and 1366×768 layouts. All had equal document client/scroll widths (375, 753, 1009 and 1351 CSS pixels respectively, after scrollbars), without horizontal overflow. New filter and pagination controls measured at least 52px tall. The phone layout used two-column filters, and actual filter/next-page actions worked. Record browsing intentionally scrolls vertically; the existing one-screen question/answer workspace is unchanged.
+- Pagination/correction returns focused the visible live summary; button pressed/disabled states matched the selected filter and boundaries. This is state/keyboard-focus verification, not a screen-reader certification.
+- Video regression: actual unmuted MP4 playback advanced to 21.359311 seconds, paused via the large button, with readyState 4, no media error and duration 69.273243 seconds. Returning to the notebook reset its transient filters without altering its counts.
+- Recent browser error logs contained no application-origin errors. The temporary iframe page was removed before packaging. The preview server was stopped after QA. No physical phone/iPad, Safari, touch-hardware or spoken-output testing is claimed.
+
+## Boundaries
+- No real child data, microphone access, file selection/upload, provider request, new dependency or paid resource was used in this change. Hosted records remain browser-local, not cloud-synchronized or a reliable cloud backup. Same-browser profiles are not authenticated identities.
+- Small-step errors are historical evidence, not an assertion that the learner still cannot answer. Static questions and repeat exposures do not establish mastery. This is still a finite authored preview, not textbook alignment or live DeepSeek tutoring.
+
+---
+
 # Multi-tab conflict protection and backup browser acceptance — 2026-11-13
 
 - Final suite: 258/258 Node tests passed, including 13 new storage-coordinator and 13 new application conflict groups. Independent model/UI review, JavaScript syntax and whitespace checks passed. No storage schema, backup version, backend, dependency or hosting configuration changed.
