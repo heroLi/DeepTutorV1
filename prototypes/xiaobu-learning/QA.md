@@ -1,3 +1,22 @@
+# Local dialogue and DeepSeek adapter verification — 2026-11-13
+
+## Final checks and boundaries
+- 115/115 Node tests passed. All shipped frontend, server, simulator and test JavaScript passed syntax checks; `git diff --check` passed. No dependency was added.
+- The 20 adapter tests use injected fake HTTP responses and synthetic credentials. They cover 36 question/intent pairs, strict protocol/answers, cancellation and timeouts, auth/profile boundaries, CSRF, duplicate/concurrent claims, cached errors/results, conservative cost reservations and scope freezing. No real API call or credential access occurred.
+- The Site remains static with a local finite mock. The new HTTP adapter is source code only, not a deployed authenticated service. Durable transactional accounting, rate limiting, real authorization and a specific API budget are still prerequisites.
+- Voice unit tests use fake browser capabilities: installed local recognition only, no cloud fallback or pack installation, explicit start, 20-second stop, transcript review without automatic send, cancellation/late callbacks, microphone rejection and local-only synthesis.
+
+## Browser acceptance
+- Supported Chromium verified math/Chinese/English dialogue, typed known and unknown questions, literal HTML-like text escaping, empty repeated submissions, keyboard activation, question/profile switching, route departure and reload. Dialogue clears instead of being written to learning records. The repeated hint sentence found in QA was corrected and frontend/server contracts were rechecked.
+- Six same-origin fixture viewports (1366×768, 1280×720, 1024×768, 768×1024, 820×1180, 1180×820) had document dimensions equal to their viewports. Questions/actions and the composer remained within the screen; the message area and long question text can scroll internally. Dialogue action buttons measured at least 46px; phone buttons measured 56px.
+- A 390×844 phone fixture had 375px usable content width, no horizontal overflow and intentional vertical scrolling. A known typed question and empty repeat submission worked there.
+- This browser could not confirm installed local Chinese recognition or a local Chinese voice. Both controls stayed disabled with explanatory text. No microphone permission was granted, no recording was made, and actual recognition/spoken output was not tested. Fake-capability unit tests are not real-device acceptance.
+- Existing video still played unmuted, advanced to 10.808879s, paused and reported duration 69.273243s, readyState 4, no media error. Assessment navigation remained reachable; the full previous learning/storage/media suites passed unchanged.
+- Console samples contained extension-origin metadata errors, not an observed application error. No production learner records were read or cleared. Only synthetic preview activity was used; no localStorage records are packaged.
+- No physical iPad/iPhone/Android, Safari, touch hardware or screen-reader certification. The temporary viewport fixture was removed before release. Site audience and source-repository visibility remain unchanged.
+
+---
+
 # Guided learning loop verification — 2026-11-11
 
 ## Final local checks
