@@ -1,3 +1,23 @@
+# Date-window parent summary verification — 2026-11-13
+
+## Scope and final checks
+- 317/317 Node tests passed: 11 new pure projection groups, 5 markup groups and 7 application integration groups, plus all existing tests. Independent review, JavaScript syntax and `git diff --check` passed.
+- Adds a read-only current-profile parent summary for the last 7 or 30 device-local calendar days (inclusive), or all dates through today. Uses calendar arithmetic rather than elapsed 24-hour blocks, with year/month/leap-day and America/Los_Angeles spring/fall DST checks.
+- Completed foundation groups, submitted assessments, completed small-step practice/review runs and individual answer/guide events use their own timestamps. `activeTest` is not counted twice alongside its submitted assessment copy. Practice/review first answers, assisted retries, transfer answers and guide steps remain distinct. No incomplete base answer is assigned a fabricated timestamp, and no duration, streak or mastery is inferred.
+- Base/assessment error counts use original dates. A record with at least one successful retry within the range contributes one corrected record, even after repeated correct retries; it may predate the period. Later corrections never rewrite original history. Future and invalid event dates are excluded and reported without changing the stored record.
+- Filters and manual refresh replace only the summary region. Tests verified a pending backup file read can finish and restore normally after either operation; the backup panel is not disposed or reset. This was automated with a synthetic reader, not another browser file-selection test. Invalid or wrong-route controls do nothing; profile changes, route exit, clear, successful restore and reload reset the period to 7 days. Existing storage conflicts block interactions, and protected malformed storage remains untouched.
+
+## Browser acceptance
+- The actual application HTML/modules ran in Chromium against a clearly labeled, isolated synthetic storage backend. It did not read or write native localStorage. A profile held foundation completions dated today, 10 days ago and 40 days ago; the view correctly showed 1, 2 and 3 for 7-day, 30-day and all ranges. The 3/4 submitted assessment was not duplicated by its active-test copy.
+- A small-step first error 10 days ago was absent from the 7-day stage count but included in the 30-day count. Today's guided retry, transfer error and two guide choices remained separately visible. An older original error with two correct retries today counted once as a period-corrected record. A tomorrow-dated error produced an explicit exclusion notice. All-range still excluded future events.
+- Range changes and repeated refresh left the backend write counter at zero and its initial raw string unchanged. Switching to empty profile B showed actual zeros and default 7 days; switching back preserved A. The two profile-switch writes were expected existing behavior, and switching back returned the raw string to its original value.
+- With a deliberately invalid optional loop state, the app kept usable base history, showed protection warnings, disabled restore and let the parent view ranges without writes. Navigating away and back reset the period while the original malformed string stayed unchanged. No recovery download, file chooser or production storage was touched in this release's browser checks.
+- 390×844, 768×1024, 1024×768 and 1366×768 same-origin iframe viewports had equal client/scroll widths of 375, 753, 1009 and 1351 CSS pixels. All four period/refresh buttons measured at least 52px tall; the phone layout used two columns. Parent history intentionally scrolls vertically; the existing one-screen-priority learning layouts were unchanged. These are responsive Chromium checks, not physical phone/iPad, Safari, touch-hardware or screen-reader certification.
+- The ordinary local-preview tab retained its previous synthetic B notebook: ten original errors, six pending, one corrected and three small-step errors. Its new parent view showed the matching counts and separate phases. Enter activated the 30-day control and moved focus to the live status text. No app-origin error was observed; unrelated browser-extension metadata errors were excluded.
+- Temporary fixture files were removed before packaging. There are no new dependencies, storage-schema changes, real child records, credentials, model calls, microphone/recording access, external uploads, cloud resources, fees or sharing changes. Media and the undeployed API adapter are unchanged.
+
+---
+
 # Protected invalid-storage recovery verification — 2026-11-13
 
 ## Defect and repair
