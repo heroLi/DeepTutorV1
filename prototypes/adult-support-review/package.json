@@ -1,0 +1,12 @@
+{
+  "name": "adult-support-review",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "dev": "node dev/adult-evaluation-preview.js"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'none'; script-src 'self'; style-src 'self'; img-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>讲解质量评测台 · 本地成人评审</title>
+<link rel="stylesheet" href="./style.css">
+<script type="module" src="./app.js"></script>
+<script type="module" src="./support-app.js"></script>
+</head>
+<body>
+<a id="workflow-skip" class="skip-link" href="#workspace">跳到评审工作区</a>
+<header class="page-header"><div><p class="eyebrow">成人评审 · 合成用例 · 离线候选</p><h1>讲解质量评测台</h1><p class="subtitle">对照基准，检查讲解，再记录你的判断。</p></div><span class="environment">本地工作副本</span></header>
+<section class="boundary" aria-label="评测范围"><strong>这里评估讲解内容，不评估学习者。</strong><p>所有题目与候选均为预先编写的合成材料，不是 DeepSeek 输出。评审结果不证明真实模型能力或儿童教学效果。没有姓名、学习档案、自由提问、录音或上传入口。</p><p>本次评审只保存在页面内存中，刷新或关闭后全部清除；需要保留时请下载报告。未保存的评审草稿不会进入报告。</p></section>
+<nav class="workflow-nav" aria-label="成人评测工作流"><button id="show-explanation" type="button" aria-pressed="true" aria-controls="explanation-workspace">讲解内容审校</button><button id="show-support" type="button" aria-pressed="false" aria-controls="support-workspace">学习证据与下一步</button></nav>
+<section id="explanation-workspace" aria-label="讲解内容审校">
+<div id="notice" class="notice" role="status" aria-live="polite" aria-atomic="true">请选择用例和候选，对三项标准逐一作出人工判断。</div>
+<main id="workspace" class="workspace" tabindex="-1">
+<aside class="panel case-panel"><div class="section-label">01 / 评测材料</div><h2>选择合成用例</h2><nav id="case-list" aria-label="评测用例"></nav><div class="candidate-group"><h3>离线候选</h3><div id="candidate-list" aria-label="候选版本"></div></div><p class="muted">候选包含人为设置的不同质量示例。切换不会自动给出评分。</p></aside>
+<section class="panel evidence-panel" aria-labelledby="case-title"><div class="section-label">02 / 对照检查</div><h2 id="case-title"></h2><div class="prompt-block"><h3>合成题目</h3><p id="case-prompt"></p></div><section class="reference-block"><h3>审校基准</h3><p id="reference-answer" class="answer"></p><p id="reference-reasoning"></p><ul id="reference-checks"></ul></section><section class="candidate-block"><div class="candidate-heading"><h3 id="candidate-title"></h3><span class="fixture-badge">人工编写</span></div><p id="candidate-text" class="candidate-text"></p><p id="fixture-note" class="muted"></p></section></section>
+<section class="panel review-panel" aria-labelledby="review-title"><div class="section-label">03 / 人工评审</div><h2 id="review-title">记录你的判断</h2><p class="muted">每项选择“通过”“不通过”或“待核查”。未选择不等于通过。</p><div id="rubric-list"></div><p id="draft-state" class="draft-state"></p><button id="save-review" type="button" class="primary" disabled>保存评审结论</button><p class="muted decision-help">结论汇总规则：任一项不通过 → 需修订；否则有待核查 → 待复核；全部通过 → 本次评审可接受。它不是自动质量检测。</p></section>
+</main>
+<section class="panel results-panel" aria-labelledby="results-title"><div class="results-header"><div><div class="section-label">04 / 评审矩阵</div><h2 id="results-title">本次评审记录 <span id="review-count" class="count"></span></h2></div><div class="actions"><button id="export-report" type="button" disabled>下载已保存报告</button><button id="clear-reviews" type="button" class="danger" disabled>清空本次评审</button></div></div><p id="results-summary" class="muted"></p><div class="table-scroll" tabindex="0" aria-label="评审矩阵，可横向滚动"><table><caption>人工评审矩阵；同一候选再次保存会更新原记录，不重复计数。</caption><thead><tr><th scope="col">用例</th><th scope="col">候选</th><th scope="col">正确性</th><th scope="col">推导依据</th><th scope="col">后续追问</th><th scope="col">人工结论</th><th scope="col">操作</th></tr></thead><tbody id="review-matrix"></tbody></table></div></section>
+</section>
+<section id="support-workspace" aria-labelledby="support-heading" hidden>
+<div class="support-intro"><h2 id="support-heading" tabindex="-1">先看学习证据，再选支持方式</h2><p>成人方案审查：选择固定情境 → 区分已经看到与尚未验证的证据 → 比较下一步支持。这里不收集真实作答，也不判断任何孩子的能力。</p><p class="muted">当场提示后答对、独立做新题、隔一段时间仍能做，是不同的证据。以下情境与参考方案均为人工编写，不是模型建议或经过验证的个体学习诊断。</p></div>
+<div id="support-notice" class="notice" role="status" aria-live="polite" aria-atomic="true">选择一个合成情境，审查下一步方案。</div>
+<div class="support-layout">
+<aside class="panel"><h3>合成观察情境</h3><nav id="support-scenario-list" aria-label="支持方案情境"></nav><p class="muted support-memory-note">两个工作流的草稿分别保留在本页内存。切换工作流不会清空，刷新或关闭会全部清除。</p></aside>
+<div class="support-main">
+<section class="panel" aria-labelledby="support-scenario-title"><span class="fixture-badge">合成观察，不是真实记录</span><h3 id="support-scenario-title"></h3><p id="support-scenario-summary"></p><ol id="support-timeline" class="support-timeline"></ol><div class="support-evidence"><h3>这段记录提供的证据</h3><p id="support-evidence"></p></div><div class="support-limit"><h3>还不能据此断定</h3><p id="support-limit"></p></div></section>
+<section class="panel" aria-labelledby="support-action-heading"><h3 id="support-action-heading">拟采用哪种下一步支持？</h3><p class="muted">选择用于审查方案，不会向孩子下发练习或建立日程。参考选择不是唯一正确答案，实际安排还要看教学内容、已有基础和当时状态。</p><fieldset class="support-actions"><legend class="sr-only">下一步支持动作</legend><div id="support-action-list"></div></fieldset><p id="support-choice" class="support-choice"></p><details id="support-reference"><summary>核对参考方案与下一次检查</summary><h4 id="support-recommended"></h4><p id="support-rationale"></p><h4>下一次怎样核查</h4><p id="support-next-check"></p><h4>如果仍然不会</h4><p id="support-fallback"></p></details><section class="support-rehearsal"><h4>演练下一次观察</h4><p class="muted">先保存本次方案，再选择一个人工设定的后续情境，继续审查下一步。下面不是实际核查结果或系统预测，不会自动给孩子出题；未保存草稿切换时仍需确认。</p><div id="support-rehearsal" class="actions"></div></section><p id="support-draft-state" class="draft-state"></p><button id="support-save" type="button" class="primary" disabled>保存这次方案审查</button></section>
+</div></div>
+<section class="panel results-panel" aria-labelledby="support-results-title"><div class="results-header"><h3 id="support-results-title">已保存支持方案 <span id="support-record-count" class="count">0 / 6</span></h3><div class="actions"><button id="support-export" type="button" disabled>下载支持方案报告</button><button id="support-clear" type="button" class="danger" disabled>清空支持方案</button></div></div><p class="muted">同一情境重评后替换原记录。只导出已保存选择与对应合成材料，草稿不导出；讲解审校报告与此报告分开。</p><ul id="support-records" class="support-records"></ul></section>
+<aside class="panel support-source"><h3>方法依据与边界</h3><p>参考 IES/WWC 关于间隔复习、示范与独立练习交替、主动回忆和解释性追问的建议。具体情境、动作顺序与检查题是本项目的审查样例，不是该指南验证的自动决策算法。没有统一“几天复习”或“多少正确率即掌握”的阈值。</p><a id="support-source-link" href="https://ies.ed.gov/ncee/WWC/PracticeGuide/1" target="_blank" rel="noopener noreferrer">阅读 IES/WWC 原始指南（外部页面）</a></aside>
+</section>
+<dialog id="support-confirm" aria-labelledby="support-confirm-title" aria-describedby="support-confirm-description"><h2 id="support-confirm-title"></h2><p id="support-confirm-description"></p><div class="dialog-actions"><button id="support-confirm-cancel" type="button" autofocus>保留当前内容</button><button id="support-confirm-accept" type="button" class="danger">确认</button></div></dialog>
+<footer>本地离线评测工具 · 无真实模型连接 · 无跨设备保存 · 原学习作品与其记录保持独立</footer>
+<dialog id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-description"><h2 id="confirm-title"></h2><p id="confirm-description"></p><div class="dialog-actions"><button id="confirm-cancel" type="button" autofocus>保留当前内容</button><button id="confirm-accept" type="button" class="danger">确认放弃</button></div></dialog>
+</body>
+</html>
