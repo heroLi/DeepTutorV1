@@ -46,5 +46,8 @@ jobs:
           node --check /tmp/tutor-ui.js
           python -c "from pathlib import Path; Path('/tmp/learning-ui.js').write_text(Path('learn.html').read_text().split('<script>')[1].split('</script>')[0])"
           node --check /tmp/learning-ui.js
+      - name: Adult synthetic support review tests
+        working-directory: prototypes/adult-support-review
+        run: npm test
       - name: Python syntax
         run: python -m compileall -q app.py core.py curriculum.py curriculum_alignment.py tutor_provider.py learning_flow.py learning_records.py language_practice.py render.py tests
