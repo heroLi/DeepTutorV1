@@ -1,1 +1,14 @@
-{"name":"xiaobu-private-preview","private":true,"type":"module","scripts":{"test":"node --test tests/*.test.js","demo:api":"node dev/http-demo.js"},"engines":{"node":">=22.13.0"}}
+{
+  "name": "xiaobu-private-preview",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "demo:api": "node dev/http-demo.js",
+    "dev": "node dev/parent-flow-preview.js",
+    "dev:parent": "node dev/parent-flow-preview.js"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}
