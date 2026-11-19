@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {grade1,startGrade1,grade1Step} from '../dist/curriculum-grade1-model.js';
+import {grade1,makeTen,startGrade1,grade1Step} from '../dist/curriculum-grade1-model.js';
 import {catalog,createRound} from '../dist/curriculum-model.js';
 import {startParentFlowPreview} from '../dev/parent-flow-preview.js';
 
@@ -100,7 +100,7 @@ test('G1 controls run the rendered first-question flow and return focus to the s
   assert.match(view.innerHTML,/第 2 题/);
   press(view,{action:'choose',choice:'1'});press(view,{action:'next'});
   press(view,{action:'choose',choice:'2'});press(view,{action:'next'});
-  assert.match(view.innerHTML,/三题做完了/);
+  assert.match(view.innerHTML,/3 题完成/);
   press(view,{action:'restart'});
   assert.match(view.innerHTML,/第 1 题/);
   for(const choice of ['0','1','2']){press(view,{action:'choose',choice});press(view,{action:'next'});}
@@ -108,6 +108,59 @@ test('G1 controls run the rendered first-question flow and return focus to the s
   assert.equal(view.innerHTML,'');
   assert.equal(picker.focusCount,1);
   assert.ok(view.focusCount>0);
+ } finally {
+  if(originalDocument===undefined)delete globalThis.document;else globalThis.document=originalDocument;
+ }
+});
+
+test('optional make-ten round preserves 8 + 5 as 8 + 2 + 3 across visual stages',()=>{
+ const [fill,split,total]=makeTen.questions;
+ assert.deepEqual(makeTen.questions.map(q=>q.answer),['2','3','13']);
+ assert.deepEqual(makeTen.questions.map(q=>Object.values(q.frame)),[[8,0,5],[8,2,3],[8,2,3]]);
+ assert.ok(makeTen.questions.every(({frame:{base,moved,remaining}})=>moved+remaining===5&&base+moved<=10));
+ assert.match(split.why,/5 拆成 2 和 3/);
+ assert.match(total.why,/先凑成 10，再加 3，等于 13/);
+ assert.equal(startGrade1('math').id,'math');
+ assert.equal(grade1.subjects.find(s=>s.id==='math').questions.length,3);
+ assert.equal(fill.frame.moved,0);
+ let extension=startGrade1(makeTen.id);
+ for(const q of makeTen.questions){
+  const wrong=q.choices.find(c=>c!==q.answer);
+  extension=grade1Step(extension,'choose',wrong);assert.equal(extension.phase,'retry');
+  extension=grade1Step(extension,'retry');
+  extension=grade1Step(extension,'choose',q.answer);assert.equal(extension.phase,'feedback');
+  extension=grade1Step(extension,'next');
+ }
+ assert.equal(extension.phase,'complete');
+});
+
+test('visual math extension links scoped source, represents ten grid cells and gives a screen-reader description at each stage',async()=>{
+ const originalDocument=globalThis.document;
+ const el=()=>({innerHTML:'',events:{},addEventListener(name,fn){this.events[name]=fn;},querySelector(){return {focus(){}};}});
+ const picker=el(),view=el();
+ globalThis.document={getElementById:id=>id==='g1-subjects'?picker:view};
+ try{
+  await import('../dist/curriculum-grade1-ui.js?ten-frame-test');
+  assert.match(picker.innerHTML,/试做凑十拓展/);
+  assert.match(picker.innerHTML,/32470/);
+  const press=(target,dataset)=>target.events.click({target:{closest:()=>({dataset})}});
+  press(picker,{start:'math'});
+  assert.doesNotMatch(view.innerHTML,/g1-ten-frame/);
+  press(picker,{start:makeTen.id});
+  assert.match(view.innerHTML,/第 1 题 \/ 3/);
+  assert.match(view.innerHTML,/role="img" aria-label="十格框里原有 8 颗，还有 2 个空格，框外有 5 颗"/);
+  assert.equal((view.innerHTML.match(/g1-dot g1-empty/g)||[]).length,2);
+  assert.equal((view.innerHTML.match(/g1-dot /g)||[]).length,15);
+  press(view,{action:'choose',choice:'0'});press(view,{action:'next'});
+  assert.match(view.innerHTML,/role="img" aria-label="十格框里原有 8 颗，移入 2 颗，十格框已经填满，框外有 3 颗"/);
+  assert.doesNotMatch(view.innerHTML,/g1-dot g1-empty/);
+  assert.equal((view.innerHTML.match(/g1-dot /g)||[]).length,13);
+  press(view,{action:'choose',choice:'1'});press(view,{action:'next'});
+  assert.match(view.innerHTML,/第 3 题 \/ 3/);
+  press(view,{action:'choose',choice:'2'});
+  assert.match(view.innerHTML,/先凑成 10，再加 3，等于 13/);
+  press(view,{action:'next'});
+  assert.match(view.innerHTML,/3 题完成/);
  } finally {
   if(originalDocument===undefined)delete globalThis.document;else globalThis.document=originalDocument;
  }

@@ -5,3 +5,9 @@
 .g1-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(8rem,100%),1fr));gap:.6rem;margin:1rem 0}
 .grade-one .g1-choices button{margin:0;font-size:1.2rem;font-weight:650}.g1-face{margin:.15em 0;font-size:clamp(2rem,8vw,3.5rem);font-weight:700}.g1-question{font-size:1.25rem}
 .g1-message{padding:.6rem 1rem;background:#e8f3ec;border-radius:.65rem}.g1-note{font-size:.96rem}.g1-card summary:focus-visible,.g1-message:focus,#g1-round h2:focus{outline:2px solid #23735c;outline-offset:2px}
+.g1-extension{border-top:1px solid #bdd8cb;margin-top:.75rem}.g1-extension p{margin:.55rem 0 .15rem}
+.g1-ten-visual{display:flex;flex-wrap:wrap;gap:.75rem 1.4rem;margin:.75rem 0;font-size:1rem}
+.g1-ten-caption{color:#154f40;margin-bottom:.4rem}.g1-ten-frame,.g1-ten-outside{display:grid;grid-template-columns:repeat(5,clamp(1.2rem,5vw,2.1rem));gap:.2rem}
+.g1-dot{aspect-ratio:1;display:grid;place-items:center;border:1px solid #729383;border-radius:.3rem;background:#f1f7f3}
+.g1-dot:not(.g1-empty)::before{content:'';width:62%;aspect-ratio:1;border-radius:50%;background:#0e674b}
+.g1-dot.g1-moved::before{background:#9e461e;border:2px solid #ffdfbd;box-sizing:border-box}

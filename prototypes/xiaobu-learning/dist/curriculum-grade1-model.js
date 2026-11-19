@@ -32,12 +32,26 @@ export const grade1 = {
  ]
 };
 
+// Optional math extension runs separately from the three within-10 warm-up questions.
+export const makeTen = {
+ id:'math-make-ten',label:'数学拓展 · 凑十',topic:'20 以内进位加法：8 ＋ 5',
+ evidence:{title:'徐汇区位育小学：2026 秋季一年级家长会',url:'https://wyxx.xhedu.sh.cn/cms/app/info/doc/index.php/32470',scope:'学校说明其沪教版一年级上册学习 20 以内进位加法。只核实该校该学期的主题，未核实教材单元编号或其他学校用书。'},
+ questions:[
+  {face:'8 ＋ 5',frame:{base:8,moved:0,remaining:5},prompt:'十格框已有 8 颗。要填满，还要从这 5 颗里拿几颗？',choices:['2','3','5'],answer:'2',hint:'数一数十格框里有几个空格。',why:'有 2 个空格，拿 2 颗就能凑满 10。'},
+  {face:'5 ＝ 2 ＋ ？',frame:{base:8,moved:2,remaining:3},prompt:'把 2 颗移进框里凑成 10。原来的 5 颗还剩几颗在框外？',choices:['2','3','5'],answer:'3',hint:'数一数框外留下来的圆点。',why:'5 拆成 2 和 3。2 颗进了框，框外还剩 3 颗。'},
+  {face:'10 ＋ 3',frame:{base:8,moved:2,remaining:3},prompt:'框里 10 颗，框外还有 3 颗。合起来一共几颗？',choices:['10','12','13'],answer:'13',hint:'从 10 接着数 3 步。',why:'8 ＋ 5 就是 8 ＋ 2 ＋ 3，先凑成 10，再加 3，等于 13。'}
+ ]
+};
+export function grade1Pack(id) {
+ return id===makeTen.id?makeTen:grade1.subjects.find(s=>s.id===id);
+}
+
 export function startGrade1(id) {
- if(!grade1.subjects.some(s=>s.id===id)) return null;
+ if(!grade1Pack(id)) return null;
  return {id,index:0,phase:'answer',hint:false};
 }
 export function grade1Step(state,action,value) {
- const pack=grade1.subjects.find(s=>s.id===state?.id);
+ const pack=grade1Pack(state?.id);
  if(!pack||state.phase==='complete') return state;
  const question=pack.questions[state.index];
  if(!question) return state;
