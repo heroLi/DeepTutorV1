@@ -1,0 +1,7 @@
+.grade-one nav{display:flex;flex-wrap:wrap;gap:.5rem 1rem}.grade-one nav a{display:inline-flex;align-items:center;min-height:44px}
+#g1-subjects{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr));gap:1rem;margin:1.25rem 0}
+.g1-card,#g1-round:not(:empty){background:#fff;border:1px solid #bdd8cb;border-radius:1rem;padding:1rem;min-width:0}
+.g1-card h2{margin:0}.g1-card summary{cursor:pointer;padding:.75rem 0}.g1-card button,.grade-one #g1-round button{min-height:52px}
+.g1-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(8rem,100%),1fr));gap:.6rem;margin:1rem 0}
+.grade-one .g1-choices button{margin:0;font-size:1.2rem;font-weight:650}.g1-face{margin:.15em 0;font-size:clamp(2rem,8vw,3.5rem);font-weight:700}.g1-question{font-size:1.25rem}
+.g1-message{padding:.6rem 1rem;background:#e8f3ec;border-radius:.65rem}.g1-note{font-size:.96rem}.g1-card summary:focus-visible,.g1-message:focus,#g1-round h2:focus{outline:2px solid #23735c;outline-offset:2px}

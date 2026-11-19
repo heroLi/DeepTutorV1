@@ -65,3 +65,9 @@ The [local D1/workerd harness](dev/d1-readiness/README.md) now runs the actual l
 ## Interrupted API acknowledgment verification
 
 The optional [local D1 recovery harness](dev/d1-readiness/README.md#interrupted-acknowledgments-and-restart-verification) now verifies committed-but-unacknowledged reservations and settlements, and a failed pre-commit settlement, with actual D1 persistence and workerd restart. Pending operations remain reserved without a second provider call; committed settlements replay without double charging. [Reviewed evidence](docs/d1-recovery-evidence.json) uses TEST units and fake local provider responses only. This is source-only reliability validation, not a newly connected API, real crash certification or automatic financial reconciliation. The static private Site remains unchanged.
+
+### 上海一年级上册（家长核验）
+
+用 `npm run dev` 打开终端打印的本机地址，在首页选择“一年级”或“三年级”；也可打开 `/curriculum-grade1.html`，从年级页互相切换。一年级首批包括《天地人》三字识认、10 以内加减法和 My family 家庭称呼，各 3 道原创点选题。每题可看提示、重选和查看解释，不需要输入、照片或录音。
+
+教材来源按科目列出，仅核验书系/少量教学主题；未接入整册教材，未确认学校所用印次。仅供成年家长用合成材料核验，试做状态只在当前页面内存中，不使用或改动原学习档案，不发送答案。预览只绑定到本机；没有在真实 iPad 上验证，也未部署。
