@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
 const root=new URL('../dist/',import.meta.url);
-const names=['curriculum.html','curriculum.css','curriculum-model.js','curriculum-ui.js','app.js','backup-model.js','backup-ui.js','dialogue-model.js','dialogue-page.js','loop-model.js','loop-ui.js','model.js','parent-summary-ui.js','parent-summary.js','storage-coordinator.js','styles.css','support-next-step.js','video-controls.js','voice-local.js','wrong-notebook.js'];
+const names=['curriculum-connections.js','curriculum.html','curriculum.css','curriculum-model.js','curriculum-ui.js','app.js','backup-model.js','backup-ui.js','dialogue-model.js','dialogue-page.js','loop-model.js','loop-ui.js','model.js','parent-summary-ui.js','parent-summary.js','storage-coordinator.js','styles.css','support-next-step.js','video-controls.js','voice-local.js','wrong-notebook.js'];
 export async function startParentFlowPreview({port=0}={}){
  if(!Number.isInteger(port)||port<0||port>65535)throw Error('INVALID_PORT');let origin;
  const server=http.createServer(async(req,res)=>{
