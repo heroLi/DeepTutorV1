@@ -51,6 +51,12 @@ export const shanghaiConnections={
   originalGovSource:'https://www.shqp.gov.cn/shqp/ggfw/ztfwk/jyu/yx/20261028/1407419.html',originalGovPageRetrieved:false,
   limitation:'青浦区教育学院原页明确三年级第一学期第五单元 I can help。已核实该教研报道中的单元信息；未核实ISBN、主编、完整目录或用户学校选用。报道中的课时设计不冒充教材原始目录。'
  }],
+ englishStructure:{
+  grade:3,term:'上册',unitCount:10,
+  source:'https://xhsyxx.fudan.edu.cn/info/1141/13475.htm',published:'2026-10-12',activity:'2026-09-23',
+  summary:'复旦大学附属徐汇实验学校的区级教研报道提到，讲座对照了三年级英语上册的 10 个单元，区分理解性与表达性技能。',
+  limitation:'这是教研报道记载的单元总数，不是官方单元目录；不提供十个单元的标题、顺序或学校实际印次。另有八单元资料，未确认与本册相同，不混用。'
+ },
  englishRollout:{
   source:'https://jfy.pudong-edu.sh.cn/web/pdjfy/4560004-4560000018624.htm?Page=68',
   published:'2026-09-11',unit:1,keyword:'goal',

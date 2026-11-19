@@ -124,3 +124,13 @@ test('Xuhui report supports a bounded lesson reference and a distinct key-senten
  assert.match(row.practice.task,/两处细节/);
  for(const key of ['展馆','潮汐牌']){assert.ok(row.practice.passage.includes(key));assert.ok(row.practice.example.includes(key));}
 });
+
+test('English structure keeps the reported count separate from unit titles and school edition',()=>{
+ const evidence=data.englishStructure;
+ assert.equal(evidence.unitCount,10);assert.equal(evidence.published,'2026-10-12');
+ assert.equal(evidence.grade,3);assert.equal(evidence.term,'上册');assert.equal(evidence.activity,'2026-09-23');
+ assert.equal(evidence.source,'https://xhsyxx.fudan.edu.cn/info/1141/13475.htm');
+ assert.match(evidence.limitation,/不是官方单元目录/);assert.match(evidence.limitation,/不混用/);
+ assert.equal(data.completeContentsVerified,false);assert.equal(data.schoolMatchVerified,false);
+ assert.equal(data.englishRollout.unit,1);assert.equal(data.unitCandidates[0].unit,5);
+});
